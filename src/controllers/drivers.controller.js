@@ -79,4 +79,20 @@ export const updateDriver = async (req, res) => {
    return res.status(200).json({ message: "Driver berhasil diperbarui", driver });
 };
 
-export const deleteDriver = async (req, res) => {};
+export const deleteDriver = async (req, res) => {
+   const { id } = req.params;
+
+   const driver = await prisma.driver.findUnique({
+      where: { id: Number(id) },
+   });
+
+   if (!driver) {
+      return res.status(400).json({ message: "Driver tidak ditemukan" });
+   }
+
+   await prisma.driver.delete({
+      where: { id: Number(id) },
+   });
+
+   return res.status(200).json({ message: "Driver berhasil dihapus" });
+};
