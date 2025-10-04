@@ -1,7 +1,8 @@
+import bcrypt from "bcrypt";
 import prisma from "./client.js";
 
 const main = async () => {
-   await prisma.user.createMany({
+   await prisma.driver.createMany({
       data: [
          {
             nama: "Admin",
