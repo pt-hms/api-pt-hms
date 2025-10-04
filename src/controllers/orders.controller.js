@@ -2,7 +2,15 @@ export const createOrder = async (req, res) => {};
 
 export const getAllOrders = async (req, res) => {};
 
-export const getOrderById = async (req, res) => {};
+export const getOrderById = async (req, res) => {
+   const { id } = req.params;
+
+   const order = await prisma.order.findUnique({
+      where: { id: Number(id) },
+   });
+
+   return res.status(200).json({ order });
+};
 
 export const updateOrder = async (req, res) => {};
 
