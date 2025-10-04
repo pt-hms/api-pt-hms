@@ -50,7 +50,15 @@ export const getAllDrivers = async (req, res) => {
    return res.status(200).json({ drivers });
 };
 
-export const getDriverById = async (req, res) => {};
+export const getDriverById = async (req, res) => {
+   const { id } = req.params;
+
+   const driver = await prisma.driver.findUnique({
+      where: { id: Number(id) },
+   });
+
+   return res.status(200).json({ driver });
+};
 
 export const updateDriver = async (req, res) => {};
 
