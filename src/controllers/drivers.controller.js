@@ -60,6 +60,23 @@ export const getDriverById = async (req, res) => {
    return res.status(200).json({ driver });
 };
 
-export const updateDriver = async (req, res) => {};
+export const updateDriver = async (req, res) => {
+   const { id } = req.params;
+   const { nama, password, no_hp, no_pol, kategori, foto_profil } = req.body;
+
+   const driver = await prisma.driver.update({
+      where: { id: Number(id) },
+      data: {
+         nama,
+         password,
+         no_hp,
+         no_pol,
+         kategori,
+         foto_profil,
+      },
+   });
+
+   return res.status(200).json({ message: "Driver berhasil diperbarui", driver });
+};
 
 export const deleteDriver = async (req, res) => {};
