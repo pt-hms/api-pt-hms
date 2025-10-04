@@ -16,14 +16,14 @@ route.put('/profile', auth, profileController.updateProfile);
 
 // drivers
 route.post('/drivers', auth, driversController.createDriver);
-route.get('/drivers/', auth, driversController.getAllDrivers);
+route.get('/drivers', auth, driversController.getAllDrivers);
 route.get('/drivers/:id', auth, driversController.getDriverById);
 route.put('/drivers/:id', auth, driversController.updateDriver);
 route.delete('/drivers/:id', auth, driversController.deleteDriver);
 
 // orders
 route.post('/orders', auth, ordersController.createOrder);
-route.get('/orders/all', auth, ordersController.getAllOrders);
+route.get('/orders', auth, ordersController.getAllOrders);
 route.get('/orders/:id', auth, ordersController.getOrderById);
 route.put('/orders/:id', auth, ordersController.updateOrder);
 route.delete('/orders/:id', auth, ordersController.deleteOrder);
