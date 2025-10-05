@@ -64,11 +64,25 @@ export const updateDriver = async (req, res) => {
    const { id } = req.params;
    const { nama, password, no_hp, no_pol, kategori, foto_profil } = req.body;
 
-   const driver = await prisma.driver.update({
+   if (!nama || !password || !no_hp || !no_pol || !kategori || !foto_profil) {
+      return res.status(400).json({ message: "Semua field harus diisi" });
+   }
+
+   const driver = await prisma.driver.findUnique({
+      where: { id: Number(id) },
+   });
+
+   if (!driver) {
+      return res.status(400).json({ message: "Driver tidak ditemukan" });
+   }
+
+   const hashedPassword = await bcrypt.hash(password, 10);
+
+   await prisma.driver.update({
       where: { id: Number(id) },
       data: {
          nama,
-         password,
+         password: hashedPassword,
          no_hp,
          no_pol,
          kategori,
@@ -76,7 +90,7 @@ export const updateDriver = async (req, res) => {
       },
    });
 
-   return res.status(200).json({ message: "Driver berhasil diperbarui", driver });
+   return res.status(200).json({ message: "Driver berhasil diperbarui"});
 };
 
 export const deleteDriver = async (req, res) => {
