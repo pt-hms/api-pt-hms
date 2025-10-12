@@ -1,18 +1,20 @@
-import multer from "multer";
-import fs from "fs";
+import axios from "axios";
+import FormData from "form-data";
+import { config } from "dotenv";
+config({ path: ".env" });
 
-export const upload = (folder) => {
-   const storage = multer.diskStorage({
-      destination: (req, file, cb) => {
-         const dir = `public/${folder}`;
-         if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-         cb(null, dir);
-      },
-      filename: (req, file, cb) => {
-         const uniqueName = Date.now() + "-" + file.originalname;
-         cb(null, uniqueName);
-      },
+const url = process.env.FILESERVER_URL;
+
+export const upload = async (file) => {
+   const formData = new FormData();
+   formData.append("file", file.buffer, {
+      filename: file.originalname,
+      contentType: file.mimetype,
    });
 
-   return multer({ storage });
+   const profil_url = await axios.post(`${url}/upload`, formData, {
+      headers: formData.getHeaders(),
+   });
+
+   return profil_url.data.url;
 };

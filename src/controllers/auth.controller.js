@@ -1,8 +1,7 @@
 import bcrypt from "bcrypt";
 import prisma from "../../prisma/client.js";
 import { createToken } from "../middleware/auth.js";
-import axios from "axios";
-import FormData from "form-data";
+import { upload } from "../middleware/upload.js";
 
 export const login = async (req, res) => {
    const { no_pol, password } = req.body;
@@ -46,23 +45,13 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: "Plat Nomor sudah terdaftar" });
    }
 
-   const hashedPassword = await bcrypt.hash(password, 10);
-
-   const formData = new FormData();
-   formData.append("file", foto_profil.buffer, {
-      filename: foto_profil.originalname,
-      contentType: foto_profil.mimetype,
-   });
-
-   const profil_url = await axios.post("http://127.0.0.1:9000/upload", formData, {
-      headers: formData.getHeaders(),
-   });
-
+   const profil_url = upload(foto_profil);
    const exp_kep_iso = new Date(exp_kep).toISOString();
+   const hashedPassword = await bcrypt.hash(password, 10);
 
    const driver = await prisma.user.create({
       data: {
-         foto_profil: profil_url.data.url,
+         foto_profil: profil_url,
          nama,
          no_pol,
          kategori,

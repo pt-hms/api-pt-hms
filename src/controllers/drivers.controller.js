@@ -2,30 +2,37 @@ import bcrypt from "bcrypt";
 import prisma from "../../prisma/client.js";
 
 export const createDriver = async (req, res) => {
-   const { nama, password, no_hp, no_pol, kategori, foto_profil } = req.body;
+   const foto_profil = req.file;
+   const { nama, no_pol, kategori, mobil, no_kep, exp_kep, no_hp, no_darurat, password } = req.body;
 
-   if (!nama || !password || !no_hp || !no_pol || !kategori || !foto_profil) {
+   if (!foto_profil || !nama || !no_pol || !kategori || !mobil || !no_kep || !exp_kep || !no_hp || !no_darurat || !password) {
       return res.status(400).json({ message: "Semua field harus diisi" });
    }
 
-   const exist = await prisma.driver.findUnique({
-      where: { no_hp },
+   const exist = await prisma.user.findUnique({
+      where: { no_pol },
    });
 
    if (exist) {
-      return res.status(400).json({ message: "Nomor HP sudah terdaftar" });
+      return res.status(400).json({ message: "Plat Nomor sudah terdaftar" });
    }
 
+   const profil_url = upload(foto_profil);
+   const exp_kep_iso = new Date(exp_kep).toISOString();
    const hashedPassword = await bcrypt.hash(password, 10);
 
-   const driver = await prisma.driver.create({
+   const driver = await prisma.user.create({
       data: {
+         foto_profil: profil_url,
          nama,
-         password: hashedPassword,
-         no_hp,
          no_pol,
          kategori,
-         foto_profil,
+         mobil,
+         no_kep,
+         exp_kep: exp_kep_iso,
+         no_hp,
+         no_darurat,
+         password: hashedPassword,
          role: "driver",
       },
    });
@@ -90,7 +97,7 @@ export const updateDriver = async (req, res) => {
       },
    });
 
-   return res.status(200).json({ message: "Driver berhasil diperbarui"});
+   return res.status(200).json({ message: "Driver berhasil diperbarui" });
 };
 
 export const deleteDriver = async (req, res) => {
