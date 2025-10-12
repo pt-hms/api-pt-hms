@@ -13,34 +13,47 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Driver {
-  id            Int       @id @default(autoincrement())
-  nama          String
-  password      String
-  no_hp         String    @unique
-  no_pol        String?
-  kategori      String?
+model User {
+  id            Int         @id @default(autoincrement())
   foto_profil   String
+  nama          String
+  no_pol        String      @unique
+  kategori      String
+  mobil         String
+  no_kep        String
+  exp_kep       DateTime    @db.Date
+  no_hp         String      @unique
+  no_darurat    String
+  password      String
   role          String
 
-  order         Order[]
+  ritase        Ritase[]
+  sij           SIJ[]
 
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 }
 
-model Order {
-  id            Int       @id() @default(autoincrement())
-  nama_driver   String
-  no_hp         String
-  no_pol        String
-  kategori      String
+model SIJ {
+  id            Int         @id() @default(autoincrement())
+  no_sij        Int
+  bukti_tf      String
+  user_id       Int
+
+  user          User        @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model Ritase {
+  id            Int         @id() @default(autoincrement())
   pickup_point  String
   tujuan        String
-  driverId      Int
+  user_id       Int
 
-  driver     Driver       @relation(fields: [driverId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user          User       @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 }

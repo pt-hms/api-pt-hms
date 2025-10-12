@@ -2,22 +2,32 @@ import bcrypt from "bcrypt";
 import prisma from "./client.js";
 
 const main = async () => {
-   await prisma.driver.createMany({
+   await prisma.user.createMany({
       data: [
          {
+            foto_profil: "https://cdn-icons-png.freepik.com/512/9703/9703596.png",
             nama: "Admin",
-            password: await bcrypt.hash("12345678", 10),
+            no_pol: "B 0000 ADM",
+            kategori: "premium",
+            mobil: "Avanza",
+            no_kep: "1234567890",
+            exp_kep: "2025-12-31T00:00:00Z",
             no_hp: "08123456789",
-            foto_profil: "https://upload.wikimedia.org/wikipedia/id/0/0f/Logo_IPB.png",
+            no_darurat: "08234567890",
+            password: await bcrypt.hash("12345678", 10),
             role: "admin",
          },
          {
+            foto_profil: "https://cdn-icons-png.freepik.com/512/1535/1535791.png",
             nama: "Driver",
-            password: await bcrypt.hash("12345678", 10),
-            no_hp: "08987654321",
-            no_pol: "B 1234 ABC",
+            no_pol: "B 1234 DRV",
             kategori: "reguler",
-            foto_profil: "https://upload.wikimedia.org/wikipedia/id/0/0f/Logo_IPB.png",
+            mobil: "Avanza",
+            no_kep: "1234567890",
+            exp_kep: "2025-12-31T00:00:00Z",
+            no_hp: "08987654321",
+            no_darurat: "08234567890",
+            password: await bcrypt.hash("12345678", 10),
             role: "driver",
          },
       ],

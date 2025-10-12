@@ -4,11 +4,14 @@ import * as authController from '../controllers/auth.controller.js';
 import * as profileController from '../controllers/profile.controller.js';
 import * as driversController from '../controllers/drivers.controller.js';
 import * as ordersController from '../controllers/orders.controller.js';
+import multer from 'multer';
 
 const route = Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
 // auth
 route.post('/login', authController.login);
+route.post('/register', upload.single("foto_profil"), authController.register);
 
 // profile
 route.get('/profile', auth, profileController.getProfile);
