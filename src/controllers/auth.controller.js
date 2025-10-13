@@ -45,13 +45,13 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: "Plat Nomor sudah terdaftar" });
    }
 
-   const profil_url = upload(foto_profil);
+   const profil_url = await upload(foto_profil);
    const exp_kep_iso = new Date(exp_kep).toISOString();
    const hashedPassword = await bcrypt.hash(password, 10);
 
    const driver = await prisma.user.create({
       data: {
-         foto_profil: profil_url,
+         foto_profil: profil_url.url,
          nama,
          no_pol,
          kategori,
