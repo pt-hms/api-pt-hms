@@ -30,7 +30,7 @@ Contoh Request (Form Data) :
 | foto_profil | (file)      |
 | nama        | John Doe    |
 | no_pol      | B1234XYZ    |
-| kategori    | pribadi     |
+| kategori    | regluer     |
 | mobil       | Avanza      |
 | no_kep      | KEP12345    |
 | exp_kep     | 2026-12-31  |
