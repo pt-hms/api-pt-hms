@@ -18,10 +18,10 @@ route.get('/profile', auth, profileController.getProfile);
 route.put('/profile', auth, profileController.updateProfile);
 
 // drivers
-route.post('/drivers', auth, driversController.createDriver);
+route.post('/drivers', auth, upload.single("foto_profil"), driversController.createDriver);
 route.get('/drivers', auth, driversController.getAllDrivers);
 route.get('/drivers/:id', auth, driversController.getDriverById);
-route.put('/drivers/:id', auth, driversController.updateDriver);
+route.put('/drivers/:id', auth, upload.single("foto_profil"), driversController.updateDriver);
 route.delete('/drivers/:id', auth, driversController.deleteDriver);
 
 // orders
