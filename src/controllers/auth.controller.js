@@ -10,8 +10,15 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: "Semua field harus diisi" });
    }
 
-   const driver = await prisma.user.findUnique({
-      where: { no_pol },
+   const noPolLower = no_pol.toLowerCase();
+
+   const driver = await prisma.user.findFirst({
+      where: {
+         no_pol: {
+            equals: noPolLower,
+            mode: "insensitive",
+         },
+      },
    });
 
    if (!driver) {
