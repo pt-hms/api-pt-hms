@@ -15,7 +15,7 @@ route.post('/login', authController.login);
 
 // profile
 route.get('/profile', auth, profileController.getProfile);
-route.put('/profile', auth, profileController.updateProfile);
+route.put('/profile', auth, upload.single("foto_profil"), profileController.updateProfile);
 
 // drivers
 route.post('/drivers', auth, upload.single("foto_profil"), driversController.createDriver);
