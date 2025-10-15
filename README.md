@@ -148,3 +148,65 @@ Response Error (500) :
    "message": "Internal server error"
 }
 ```
+
+### Create Driver
+
+Endpoint : `POST /api/drivers`
+
+Request Type : `multipart/form-data`
+
+Request Body :
+
+| Field | Type | Required | Description |
+|--------|------|-----------|-------------|
+| `foto_profil` | File | ✅ | Foto profil driver |
+| `nama` | String | ✅ | Nama lengkap driver |
+| `no_pol` | String | ✅ | Nomor polisi kendaraan |
+| `kategori` | String | ✅ | Kategori kendaraan |
+| `mobil` | String | ✅ | Nama atau tipe mobil |
+| `no_kep` | String | ✅ | Nomor keanggotaan/kepegawaian |
+| `exp_kep` | Date | ✅ | Tanggal kedaluwarsa keanggotaan |
+| `no_hp` | String | ✅ | Nomor HP driver |
+| `no_darurat` | String | ✅ | Nomor darurat yang bisa dihubungi |
+| `password` | String | ✅ | Kata sandi driver |
+
+Response Success (201) :
+
+```json
+{
+   "message": "Driver berhasil dibuat",
+   "driver": {
+      "id": 1,
+      "foto_profil": "https://fileserver.example.com/uploads/driver1.jpg",
+      "nama": "JOHN DOE",
+      "no_pol": "B1234XYZ",
+      "kategori": "PRIBADI",
+      "mobil": "AVANZA",
+      "no_kep": "KEP12345",
+      "exp_kep": "2026-12-31T00:00:00.000Z",
+      "no_hp": "08123456789",
+      "no_darurat": "08198765432",
+      "role": "driver"
+   }
+}
+```
+
+Response Error (400) :
+```json
+{
+   "message": "Semua field harus diisi"
+}
+```
+```json
+{
+   "message": "Plat Nomor sudah terdaftar"
+}
+```
+
+Response Error (500) :
+```json
+{
+   "message": "Internal server error"
+}
+```
+

@@ -1,4 +1,3 @@
-import bcrypt from "bcrypt";
 import prisma from "../../prisma/client.js";
 import { upload } from "../middleware/upload.js";
 
@@ -20,21 +19,23 @@ export const createDriver = async (req, res) => {
 
    const profil_url = await upload(foto_profil);
    const exp_kep_iso = new Date(exp_kep).toISOString();
-   const hashedPassword = await bcrypt.hash(password, 10);
 
    const driver = await prisma.user.create({
       data: {
          foto_profil: profil_url.url,
-         nama,
-         no_pol,
-         kategori,
-         mobil,
+         nama: nama.toUpperCase(),
+         no_pol: no_pol.toUpperCase(),
+         kategori: kategori.toUpperCase(),
+         mobil: mobil.toUpperCase(),
          no_kep,
          exp_kep: exp_kep_iso,
          no_hp,
          no_darurat,
-         password: hashedPassword,
+         password,
          role: "driver",
+      },
+      omit: {
+         password: true,
       },
    });
 
@@ -45,6 +46,7 @@ export const getAllDrivers = async (req, res) => {
    const { kategori } = req.query;
 
    const drivers = await prisma.user.findMany({
+      where: { role: "driver" },
       orderBy: {
          id: "desc",
       },
@@ -87,7 +89,6 @@ export const updateDriver = async (req, res) => {
 
    const profil_url = await upload(foto_profil);
    const exp_kep_iso = new Date(exp_kep).toISOString();
-   const hashedPassword = await bcrypt.hash(password, 10);
 
    await prisma.user.update({
       where: { id: Number(id) },
@@ -101,7 +102,7 @@ export const updateDriver = async (req, res) => {
          exp_kep: exp_kep_iso,
          no_hp,
          no_darurat,
-         password: hashedPassword,
+         password,
          role: "driver",
       },
    });

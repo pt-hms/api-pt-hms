@@ -10,8 +10,8 @@ const route = Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
 // auth
-route.post('/login', authController.login);
 route.post('/register', upload.single("foto_profil"), authController.register);
+route.post('/login', authController.login);
 
 // profile
 route.get('/profile', auth, profileController.getProfile);

@@ -1,5 +1,5 @@
 {
-  "name": "askcamp-be",
+  "name": "api-pthms",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "nodemon index.js",
     "start": "node index.js",
+    "migrate": "npx prisma migrate dev",
     "postinstall": "prisma generate",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
