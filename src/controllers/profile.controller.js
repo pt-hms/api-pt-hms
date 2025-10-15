@@ -1,5 +1,5 @@
 import prisma from "../../prisma/client.js";
-import { upload } from "../middleware/upload.js";
+import { upload } from "../middleware/cloudinary.js";
 
 export const getProfile = async (req, res) => {
    const { id } = req.user;

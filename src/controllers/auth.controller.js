@@ -1,6 +1,6 @@
 import prisma from "../../prisma/client.js";
 import { createToken } from "../middleware/auth.js";
-import { upload } from "../middleware/upload.js";
+import { upload } from "../middleware/cloudinary.js";
 
 export const register = async (req, res) => {
    const foto_profil = req.file;
@@ -11,7 +11,6 @@ export const register = async (req, res) => {
    }
 
    const noPolUpper = no_pol.toUpperCase();
-
    const exist = await prisma.user.findUnique({
       where: { no_pol: noPolUpper },
    });
@@ -53,7 +52,6 @@ export const login = async (req, res) => {
    }
 
    const noPolUpper = no_pol.toUpperCase();
-
    const driver = await prisma.user.findUnique({
       where: { no_pol: noPolUpper },
    });

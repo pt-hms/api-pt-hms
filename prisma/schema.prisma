@@ -48,6 +48,7 @@ model SIJ {
 
 model Ritase {
   id            Int         @id() @default(autoincrement())
+  ss_order      String
   pickup_point  String
   tujuan        String
   user_id       Int

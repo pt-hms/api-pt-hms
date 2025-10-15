@@ -1,5 +1,5 @@
 import prisma from "../../prisma/client.js";
-import { upload } from "../middleware/upload.js";
+import { upload } from "../middleware/cloudinary.js";
 
 export const createSij = async (req, res) => {
    const bukti_tf = req.file;
@@ -10,7 +10,6 @@ export const createSij = async (req, res) => {
    }
 
    const noPolUpper = no_pol.toUpperCase();
-
    const driver = await prisma.user.findUnique({
       where: { no_pol: noPolUpper },
    });

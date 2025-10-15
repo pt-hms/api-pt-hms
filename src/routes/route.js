@@ -4,7 +4,7 @@ import * as authController from '../controllers/auth.controller.js';
 import * as profileController from '../controllers/profile.controller.js';
 import * as driversController from '../controllers/drivers.controller.js';
 import * as sijController from '../controllers/sij.controller.js';
-import * as ordersController from '../controllers/orders.controller.js';
+import * as ritaseController from '../controllers/ritase.controller.js';
 import multer from 'multer';
 
 const route = Router();
@@ -33,11 +33,12 @@ route.put('/sij/:id', auth, upload.single("bukti_tf"), sijController.updateSij);
 route.delete('/sij/:id', auth, sijController.deleteSij);
 route.post('/sij/print', auth, upload.single("bukti_tf"), sijController.printSij);
 
-// orders
-route.post('/orders', auth, ordersController.createOrder);
-route.get('/orders', auth, ordersController.getAllOrders);
-route.get('/orders/:id', auth, ordersController.getOrderById);
-route.put('/orders/:id', auth, ordersController.updateOrder);
-route.delete('/orders/:id', auth, ordersController.deleteOrder);
+// ritase
+route.post('/ritase', auth, upload.single("ss_order"), ritaseController.createRitase);
+route.get('/ritase', auth, ritaseController.getAllRitase);
+route.get('/ritase/:id', auth, ritaseController.getRitaseById);
+route.put('/ritase/:id', auth, ritaseController.updateRitase);
+route.delete('/ritase/:id', auth, ritaseController.deleteRitase);
+route.post('/ritase/upload', auth, upload.single("ss_order"), ritaseController.uploadRitase);
 
 export default route;
