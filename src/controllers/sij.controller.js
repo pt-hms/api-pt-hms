@@ -60,12 +60,22 @@ export const createSij = async (req, res) => {
 };
 
 export const getAllSij = async (req, res) => {
-   const sij = await prisma.sIJ.findMany({
+   // const sij = await prisma.sIJ.findMany({
+   //    orderBy: {
+   //       id: "desc",
+   //    },
+   //    include: {
+   //       user: true,
+   //    },
+   // });
+
+   const sij = await prisma.user.findMany({
+      where: { role: "driver" },
       orderBy: {
          id: "desc",
       },
       include: {
-         user: true,
+         sij: true,
       },
    });
 
@@ -139,6 +149,28 @@ export const deleteSij = async (req, res) => {
    });
 
    return res.status(200).json({ message: "SIJ berhasil dihapus" });
+};
+
+export const getLastSij = async (req, res) => {
+   const startOfDay = new Date();
+   startOfDay.setHours(0, 0, 0, 0);
+
+   const endOfDay = new Date();
+   endOfDay.setHours(23, 59, 59, 999);
+
+   const lastSij = await prisma.sIJ.findFirst({
+      where: {
+         createdAt: {
+            gte: startOfDay,
+            lte: endOfDay,
+         },
+      },
+      orderBy: {
+         createdAt: "desc",
+      },
+   });
+
+   return res.status(200).json({ no_sij: lastSij.no_sij });
 };
 
 export const printSij = async (req, res) => {
