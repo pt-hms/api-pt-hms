@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "SIJ" ALTER COLUMN "no_sij" SET DATA TYPE TEXT;

@@ -10,8 +10,10 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: "Semua field harus diisi" });
    }
 
+   const noPolUpper = no_pol.toUpperCase();
+
    const exist = await prisma.user.findUnique({
-      where: { no_pol },
+      where: { no_pol: noPolUpper },
    });
 
    if (exist) {
@@ -50,15 +52,10 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: "Semua field harus diisi" });
    }
 
-   const noPolLower = no_pol.toUpperCase();
+   const noPolUpper = no_pol.toUpperCase();
 
-   const driver = await prisma.user.findFirst({
-      where: {
-         no_pol: {
-            equals: noPolLower,
-            mode: "insensitive",
-         },
-      },
+   const driver = await prisma.user.findUnique({
+      where: { no_pol: noPolUpper },
    });
 
    if (!driver) {

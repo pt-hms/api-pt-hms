@@ -9,8 +9,10 @@ export const createDriver = async (req, res) => {
       return res.status(400).json({ message: "Semua field harus diisi" });
    }
 
+   const noPolUpper = no_pol.toUpperCase();
+
    const exist = await prisma.user.findUnique({
-      where: { no_pol },
+      where: { no_pol: noPolUpper },
    });
 
    if (exist) {
@@ -66,6 +68,10 @@ export const getDriverById = async (req, res) => {
    const driver = await prisma.user.findUnique({
       where: { id: Number(id) },
    });
+
+   if (!driver) {
+      return res.status(400).json({ message: "Driver tidak ditemukan" });
+   }
 
    return res.status(200).json({ driver });
 };

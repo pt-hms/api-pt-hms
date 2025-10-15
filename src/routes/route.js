@@ -3,6 +3,7 @@ import { auth } from '../middleware/auth.js';
 import * as authController from '../controllers/auth.controller.js';
 import * as profileController from '../controllers/profile.controller.js';
 import * as driversController from '../controllers/drivers.controller.js';
+import * as sijController from '../controllers/sij.controller.js';
 import * as ordersController from '../controllers/orders.controller.js';
 import multer from 'multer';
 
@@ -23,6 +24,14 @@ route.get('/drivers', auth, driversController.getAllDrivers);
 route.get('/drivers/:id', auth, driversController.getDriverById);
 route.put('/drivers/:id', auth, upload.single("foto_profil"), driversController.updateDriver);
 route.delete('/drivers/:id', auth, driversController.deleteDriver);
+
+// sij
+route.post('/sij', auth, upload.single("bukti_tf"), sijController.createSij);
+route.get('/sij', auth, sijController.getAllSij);
+route.get('/sij/:id', auth, sijController.getSijById);
+route.put('/sij/:id', auth, upload.single("bukti_tf"), sijController.updateSij);
+route.delete('/sij/:id', auth, sijController.deleteSij);
+route.post('/sij/print', auth, upload.single("bukti_tf"), sijController.printSij);
 
 // orders
 route.post('/orders', auth, ordersController.createOrder);
