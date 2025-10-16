@@ -63,9 +63,12 @@ export const getAllDrivers = async (req, res) => {
 
 export const updateDriver = async (req, res) => {
    const { id } = req.params;
-   const { foto_profil, nama, no_pol, kategori, mobil, no_kep, exp_kep, no_hp, no_darurat, password } = req.body;
+   const { nama, no_pol, kategori, mobil, no_kep, exp_kep, no_hp, no_darurat, password } = req.body;
 
-   if (!foto_profil || !nama || !no_pol || !kategori || !mobil || !no_kep || !exp_kep || !no_hp || !no_darurat || !password) {
+   const file = req.file;
+   const foto_profil = req.body.foto_profil;
+
+   if (!nama || !no_pol || !kategori || !mobil || !no_kep || !exp_kep || !no_hp || !no_darurat || !password) {
       return res.status(400).json({ message: "Semua field harus diisi" });
    }
 
@@ -77,10 +80,15 @@ export const updateDriver = async (req, res) => {
       return res.status(400).json({ message: "Driver tidak ditemukan" });
    }
 
-   let fotoUrl = foto_profil;
-   if (typeof foto_profil !== "string") {
-      const uploadResult = await upload(foto_profil);
+   let fotoUrl;
+
+   if (file) {
+      const uploadResult = await upload(file);
       fotoUrl = uploadResult.url;
+   } else if (typeof foto_profil === "string" && foto_profil.trim() !== "") {
+      fotoUrl = foto_profil;
+   } else {
+      fotoUrl = driver.foto_profil;
    }
 
    const exp_kep_iso = new Date(exp_kep).toISOString();
