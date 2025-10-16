@@ -120,19 +120,23 @@ export const updateDriver = async (req, res) => {
 };
 
 export const deleteDriver = async (req, res) => {
-   const { id } = req.params;
+   const { id } = req.body;
 
-   const driver = await prisma.user.findUnique({
-      where: { id: Number(id) },
-   });
-
-   if (!driver) {
-      return res.status(400).json({ message: "Driver tidak ditemukan" });
+   if (!id || !Array.isArray(id) || id.length === 0) {
+      return res.status(400).json({ message: "Daftar ID tidak valid" });
    }
 
-   await prisma.user.delete({
-      where: { id: Number(id) },
+   const numericIds = id.map(Number);
+
+   const deleted = await prisma.user.deleteMany({
+      where: { id: { in: numericIds } },
    });
 
-   return res.status(200).json({ message: "Driver berhasil dihapus" });
+   if (deleted.count === 0) {
+      return res.status(404).json({ message: "Tidak ada driver yang dihapus" });
+   }
+
+   return res.status(200).json({
+      message: `Driver dengan ID ${id} berhasil dihapus`,
+   });
 };

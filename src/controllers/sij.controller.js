@@ -148,7 +148,6 @@ export const deleteSij = async (req, res) => {
 };
 
 export const getLastSij = async (req, res) => {
-   // Mulai dan akhir hari di GMT+7
    const startOfDay = dayjs().tz("Asia/Jakarta").startOf("day").utc().toDate();
    const endOfDay = dayjs().tz("Asia/Jakarta").endOf("day").utc().toDate();
 
@@ -160,9 +159,9 @@ export const getLastSij = async (req, res) => {
          },
       },
       orderBy: {
-         no_sij: "desc", // urut berdasarkan no_sij tertinggi
+         no_sij: "desc",
       },
-    });
+   });
 
    if (!lastSij) {
       return res.status(200).json({ message: "Belum ada SIJ hari ini", no_sij: null });
@@ -184,6 +183,14 @@ export const printSij = async (req, res) => {
 
    if (!driver) {
       return res.status(400).json({ message: "Driver tidak ditemukan" });
+   }
+
+   const tf = await prisma.tF.findUnique({
+      where: { id: Number(tf_id) },
+   });
+
+   if (!tf) {
+      return res.status(400).json({ message: "Bukti Transfer tidak ditemukan" });
    }
 
    const startOfDay = new Date();

@@ -28,7 +28,7 @@ route.post('/drivers', auth, upload.single("foto_profil"), driversController.cre
 route.get('/drivers', auth, driversController.getAllDrivers);
 route.get('/drivers/:id', auth, driversController.getDriverById);
 route.put('/drivers/:id', auth, upload.single("foto_profil"), driversController.updateDriver);
-route.delete('/drivers/:id', auth, driversController.deleteDriver);
+route.delete('/drivers', auth, driversController.deleteDriver);
 
 // sij
 route.post('/sij', auth, upload.single("bukti_tf"), sijController.createSij);

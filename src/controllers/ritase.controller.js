@@ -343,7 +343,6 @@ export const getMyRitase = async (req, res) => {
       orderBy: { createdAt: "desc" },
    });
 
-   // Kelompokkan berdasarkan tanggal
    const grouped = ritase.reduce((acc, item) => {
       const date = item.createdAt.toISOString().split("T")[0];
       if (!acc[date]) acc[date] = [];
@@ -351,7 +350,6 @@ export const getMyRitase = async (req, res) => {
       return acc;
    }, {});
 
-   // Ubah ke array dengan count per tanggal
    const groupedArray = Object.entries(grouped).map(([date, data]) => ({
       date,
       count: data.length,
