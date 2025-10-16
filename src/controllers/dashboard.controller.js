@@ -30,7 +30,6 @@ export const getDashboard = async (req, res) => {
    let cumulativeDrivers = 0;
    const seenDrivers = new Set();
 
-   // 🔹 Jam 00 - 06 (digabung)
    const earlyRides = ritaseData.filter((r) => {
       const hour = dayjs(r.createdAt).tz("Asia/Jakarta").hour();
       return hour >= 0 && hour < 7;
@@ -50,11 +49,9 @@ export const getDashboard = async (req, res) => {
       dailyActiveDriver: cumulativeDrivers,
    });
 
-   // 🔹 Jam 07 - 23
    for (let hour = 7; hour <= 23; hour++) {
       const currentHourTime = dayjs.tz(`${selectedDate} ${String(hour).padStart(2, "0")}:00`, "Asia/Jakarta");
 
-      // kalau jam ini sudah lewat dari waktu sekarang (atau tanggal lain yang lebih dulu)
       if (currentHourTime.isBefore(nowJakarta)) {
          const ridesThisHour = ritaseData.filter((r) => dayjs(r.createdAt).tz("Asia/Jakarta").hour() === hour).length;
          cumulativeRides += ridesThisHour;
@@ -69,7 +66,6 @@ export const getDashboard = async (req, res) => {
             dailyActiveDriver: cumulativeDrivers,
          });
       } else {
-         // jam belum terlewati → kasih 0
          report.push({
             jam: `${String(hour).padStart(2, "0")}:00`,
             rides: 0,
