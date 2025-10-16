@@ -271,62 +271,70 @@ export const deleteRitase = async (req, res) => {
 // };
 
 export const uploadRitase = async (req, res) => {
-   try {
-      const ss_order = req.file;
-      if (!ss_order) {
-         return res.status(400).json({ message: "Semua field harus diisi" });
-      }
+   const ss_order = req.file;
 
-      // 🔹 Tunggu worker siap (jika cold start)
-      const worker = await globalThis.ocrWorkerPromise;
-
-      // 🧠 Jalankan OCR langsung dari buffer (tanpa upload dulu)
-      const { data } = await worker.recognize(ss_order.buffer);
-
-      // 🎯 Ambil pickup point
-      const pickupOptions = ["1A", "1B", "1C", "2D", "2E", "2F", "3 Domestik", "3 Internasional"];
-
-      let pickup = pickupOptions.find((opt) => data.text.toLowerCase().includes(opt.toLowerCase()));
-      pickup = pickup ? (pickup.toLowerCase().startsWith("terminal") ? pickup : `Terminal ${pickup}`) : null;
-
-      // 🎯 Ambil tujuan
-      const tujuanMatch = data.text.match(/Menurunkan([\s\S]*?)Penumpang/i);
-      const tujuan = tujuanMatch ? tujuanMatch[1].replace(/\n+/g, " ").trim() : null;
-
-      if (!pickup || !tujuan) {
-         return res.status(400).json({ message: "Pick up point atau tujuan tidak ditemukan" });
-      }
-
-      // 🔍 Cek duplikat
-      const duplicate = await prisma.ritase.findFirst({
-         where: { user_id: req.user.id, pickup_point: pickup, tujuan },
-      });
-
-      if (duplicate) {
-         return res.status(400).json({ message: "Pick up point dan tujuan sudah ada" });
-      }
-
-      // ☁️ Upload gambar hanya jika data valid
-      const order = await upload(ss_order);
-
-      // 💾 Simpan ke database
-      const ritase = await prisma.ritase.create({
-         data: {
-            ss_order: order.url,
-            pickup_point: pickup,
-            tujuan,
-            user_id: req.user.id,
-         },
-      });
-
-      return res.status(201).json({
-         message: "Ritase berhasil dibuat",
-         ritase,
-      });
-   } catch (error) {
-      console.error("❌ Error uploadRitase:", error);
-      return res.status(500).json({ message: "Terjadi kesalahan server", error: error.message });
+   if (!ss_order) {
+      return res.status(400).json({ message: "Semua field harus diisi" });
    }
+
+   // ☁️ Upload ke Cloudinary (otomatis dikompres lewat sharp)
+   const order = await upload(ss_order);
+
+   // 🔍 Kirim ke OCR.Space
+   const formData = new FormData();
+   formData.append("url", order.url);
+   formData.append("language", "eng");
+   formData.append("isOverlayRequired", "false");
+
+   const ocrResponse = await axios.post("https://api.ocr.space/parse/image", formData, {
+      headers: {
+         apikey: process.env.OCR_SPACE_API_KEY,
+         ...formData.getHeaders(),
+      },
+   });
+
+   const ocrText = ocrResponse.data?.ParsedResults?.[0]?.ParsedText || "";
+   if (!ocrText) {
+      await deleteImage(order.public_id);
+      return res.status(400).json({ message: "Teks tidak terbaca dari gambar" });
+   }
+
+   // 🎯 Ambil pickup point
+   const pickupOptions = ["1A", "1B", "1C", "2D", "2E", "2F", "3 Domestik", "3 Internasional"];
+   let pickup = pickupOptions.find((opt) => ocrText.toLowerCase().includes(opt.toLowerCase()));
+   pickup = pickup ? (pickup.toLowerCase().startsWith("terminal") ? pickup : `Terminal ${pickup}`) : null;
+
+   // 🎯 Ambil tujuan
+   const tujuanMatch = ocrText.match(/Menurunkan([\s\S]*?)Penumpang/i);
+   const tujuan = tujuanMatch ? tujuanMatch[1].replace(/\n+/g, " ").trim() : null;
+
+   // ❌ Jika tidak ditemukan
+   if (!pickup || !tujuan) {
+      await deleteImage(order.public_id);
+      return res.status(400).json({ message: "Pick up point atau tujuan tidak ditemukan" });
+   }
+
+   // 🔍 Cek duplikat di database
+   const duplicate = await prisma.ritase.findFirst({
+      where: { user_id: req.user.id, pickup_point: pickup, tujuan },
+   });
+
+   if (duplicate) {
+      await deleteImage(order.public_id);
+      return res.status(400).json({ message: "Pick up point dan tujuan sudah ada" });
+   }
+
+   // 💾 Simpan ke database
+   const ritase = await prisma.ritase.create({
+      data: {
+         ss_order: order.url,
+         pickup_point: pickup,
+         tujuan,
+         user_id: req.user.id,
+      },
+   });
+
+   return res.status(201).json({ message: "Ritase berhasil dibuat", ritase });
 };
 
 export const getMyRitase = async (req, res) => {
@@ -337,4 +345,4 @@ export const getMyRitase = async (req, res) => {
    });
 
    return res.status(200).json({ ritase });
-}
+};

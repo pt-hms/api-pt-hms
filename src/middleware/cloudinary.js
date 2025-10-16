@@ -1,5 +1,7 @@
 import { v2 as cloudinary } from "cloudinary";
 import { config } from "dotenv";
+import sharp from "sharp";
+
 config({ path: ".env" });
 
 cloudinary.config({
@@ -10,15 +12,21 @@ cloudinary.config({
 
 export const upload = async (file) => {
    try {
+      if (!file || !file.buffer) {
+         throw new Error("File tidak ditemukan atau format tidak valid");
+      }
+
+      const compressedBuffer = await sharp(file.buffer)
+         .resize({ width: 1280, withoutEnlargement: true }) // batasi ukuran maksimum
+         .jpeg({ quality: 70 }) // kompres ke JPEG dengan kualitas 70%
+         .toBuffer();
+
       const result = await new Promise((resolve, reject) => {
-         const stream = cloudinary.uploader.upload_stream(
-            { folder: "pt-hms" },
-            (error, result) => {
-               if (error) reject(error);
-               else resolve(result);
-            }
-         );
-         stream.end(file.buffer);
+         const stream = cloudinary.uploader.upload_stream({ folder: "pt-hms" }, (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+         });
+         stream.end(compressedBuffer);
       });
 
       return {
