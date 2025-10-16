@@ -109,21 +109,23 @@ export const getAllSij = async (req, res) => {
 
 export const updateSij = async (req, res) => {
    const { id } = req.params;
-   const { no_pol, tanggal_jam } = req.body;
-   const bukti_tf = req.file || req.body.bukti_tf;
+   const { tf_id, no_pol, tanggal_jam } = req.body;
 
-   if (!bukti_tf || !no_pol || !tanggal_jam) {
+   // Validasi input
+   if (!tf_id || !no_pol || !tanggal_jam) {
       return res.status(400).json({ message: "Semua field harus diisi" });
    }
 
-   const sij = await prisma.sIJ.findUnique({
+   // Pastikan SIJ ada
+   const existingSij = await prisma.sIJ.findUnique({
       where: { id: Number(id) },
    });
 
-   if (!sij) {
+   if (!existingSij) {
       return res.status(404).json({ message: "SIJ tidak ditemukan" });
    }
 
+   // Cek driver berdasarkan nomor polisi
    const noPolUpper = no_pol.toUpperCase();
    const driver = await prisma.user.findUnique({
       where: { no_pol: noPolUpper },
@@ -133,25 +135,30 @@ export const updateSij = async (req, res) => {
       return res.status(400).json({ message: "Driver tidak ditemukan" });
    }
 
-   let buktiTfUrl = bukti_tf;
-   if (typeof bukti_tf !== "string") {
-      const uploadResult = await upload(bukti_tf);
-      buktiTfUrl = uploadResult.url;
+   // Cek bukti transfer
+   const tf = await prisma.tF.findUnique({
+      where: { id: Number(tf_id) },
+   });
+
+   if (!tf) {
+      return res.status(400).json({ message: "Bukti Transfer tidak ditemukan" });
    }
 
+   // Konversi tanggal ke UTC
    const createdAt = new Date(tanggal_jam);
 
+   // Update SIJ
    const updatedSij = await prisma.sIJ.update({
       where: { id: Number(id) },
       data: {
-         bukti_tf: buktiTfUrl,
+         tf_id: Number(tf_id),
          user_id: driver.id,
          createdAt,
       },
    });
 
    return res.status(200).json({
-      message: "SIJ berhasil diupdate",
+      message: "SIJ berhasil diperbarui",
       sij: updatedSij,
    });
 };
@@ -178,7 +185,6 @@ export const deleteSij = async (req, res) => {
       deletedCount: deleted.count,
    });
 };
-
 
 export const getLastSij = async (req, res) => {
    const startOfDay = dayjs().tz("Asia/Jakarta").startOf("day").utc().toDate();
