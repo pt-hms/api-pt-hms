@@ -155,17 +155,11 @@ export const uploadRitase = async (req, res) => {
       return res.status(400).json({ message: "Semua field harus diisi" });
    }
 
-   const driver = await prisma.user.findUnique({
-      where: { id: req.user.id },
-   });
-
-   if (!driver) {
-      return res.status(400).json({ message: "Driver tidak ditemukan" });
-   }
-
    const order = await upload(ss_order);
    const worker = await createWorker("eng");
    const data = await worker.recognize(order.url);
+
+   await worker.terminate();
 
    const pickupOptions = ["1A", "1B", "1C", "2D", "2E", "2F", "3 Domestik", "3 Internasional"];
    let pickup = pickupOptions.find((opt) => data.data.text.toLowerCase().includes(opt.toLowerCase()));
@@ -198,8 +192,6 @@ export const uploadRitase = async (req, res) => {
       await deleteImage(order.public_id);
       return res.status(400).json({ message: "Pick up point dan tujuan sudah ada" });
    }
-
-   await worker.terminate();
 
    const ritase = await prisma.ritase.create({
       data: {

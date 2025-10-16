@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { auth } from '../middleware/auth.js';
 import * as authController from '../controllers/auth.controller.js';
 import * as profileController from '../controllers/profile.controller.js';
+import * as dashboardController from '../controllers/dashboard.controller.js';
 import * as driversController from '../controllers/drivers.controller.js';
 import * as sijController from '../controllers/sij.controller.js';
 import * as ritaseController from '../controllers/ritase.controller.js';
@@ -17,6 +18,9 @@ route.post('/login', authController.login);
 // profile
 route.get('/profile', auth, profileController.getProfile);
 route.put('/profile', auth, upload.single("foto_profil"), profileController.updateProfile);
+
+// dashboard
+route.get('/dashboard', auth, dashboardController.getDashboard);
 
 // drivers
 route.post('/drivers', auth, upload.single("foto_profil"), driversController.createDriver);
