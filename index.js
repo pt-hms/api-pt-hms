@@ -18,7 +18,7 @@ app.use(cors());
 app.use("/api", route);
 
 app.get("/", (req, res) => {
-   res.status(200).send({ message: "KJMHS API" });
+   res.status(200).send({ message: "PT HMS API" });
 });
 
 server.listen(port, () => {
