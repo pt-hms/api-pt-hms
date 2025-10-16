@@ -29,7 +29,7 @@ model User {
 
   ritase Ritase[]
   sij    SIJ[]
-  TF     TF[]
+  tf     TF[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

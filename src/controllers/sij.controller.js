@@ -3,10 +3,9 @@ import prisma from "../../prisma/client.js";
 import { upload } from "../middleware/cloudinary.js";
 
 export const createSij = async (req, res) => {
-   const bukti_tf = req.file;
-   const { no_pol } = req.body;
+   const { tf_id, no_pol } = req.body;
 
-   if (!bukti_tf || !no_pol) {
+   if (!tf_id || !no_pol) {
       return res.status(400).json({ message: "Semua field harus diisi" });
    }
 
@@ -19,7 +18,13 @@ export const createSij = async (req, res) => {
       return res.status(400).json({ message: "Driver tidak ditemukan" });
    }
 
-   const bukti_tf_url = await upload(bukti_tf);
+   const tf = await prisma.tF.findUnique({
+      where: { id: Number(tf_id) },
+   });
+
+   if (!tf) {
+      return res.status(400).json({ message: "Bukti Transfer tidak ditemukan" });
+   }
 
    const startOfDay = new Date();
    startOfDay.setHours(0, 0, 0, 0);
@@ -49,8 +54,8 @@ export const createSij = async (req, res) => {
    const sij = await prisma.sIJ.create({
       data: {
          no_sij: nextNumber,
-         bukti_tf: bukti_tf_url.url,
          user_id: driver.id,
+         tf_id: Number(tf_id),
       },
    });
 
@@ -63,21 +68,28 @@ export const createSij = async (req, res) => {
 export const getAllSij = async (req, res) => {
    const { tanggal } = req.query;
 
-   let sijFilter = {};
+   const selectedDate = tanggal || dayjs().tz("Asia/Jakarta").format("YYYY-MM-DD");
 
-   if (tanggal) {
-      const startOfDay = dayjs.tz(tanggal, "Asia/Jakarta").startOf("day").toDate();
-      const endOfDay = dayjs.tz(tanggal, "Asia/Jakarta").endOf("day").toDate();
+   const startOfDay = dayjs.tz(selectedDate, "Asia/Jakarta").startOf("day").toDate();
+   const endOfDay = dayjs.tz(selectedDate, "Asia/Jakarta").endOf("day").toDate();
 
-      sijFilter = {
-         createdAt: {
-            gte: startOfDay,
-            lte: endOfDay,
-         },
-      };
-   }
+   // Filter untuk tabel sij
+   const sijFilter = {
+      createdAt: {
+         gte: startOfDay,
+         lte: endOfDay,
+      },
+   };
 
-   const sij = await prisma.user.findMany({
+   // Filter untuk tabel tf
+   const tfFilter = {
+      createdAt: {
+         gte: startOfDay,
+         lte: endOfDay,
+      },
+   };
+
+   const drivers = await prisma.user.findMany({
       where: { role: "driver" },
       orderBy: { id: "desc" },
       include: {
@@ -85,10 +97,14 @@ export const getAllSij = async (req, res) => {
             where: sijFilter,
             orderBy: { id: "desc" },
          },
+         tf: {
+            where: tfFilter,
+            orderBy: { id: "desc" },
+         },
       },
    });
 
-   return res.status(200).json({ sij });
+   return res.status(200).json({ drivers });
 };
 
 export const getSijById = async (req, res) => {
