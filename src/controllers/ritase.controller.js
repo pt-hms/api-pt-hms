@@ -188,19 +188,14 @@ export const uploadRitase = async (req, res) => {
       return res.status(400).json({ message: "Semua field harus diisi" });
    }
 
-   const timings = {};
-   const startAll = Date.now();
-
    try {
       // 1️⃣ Inisialisasi OCR Worker
-      const startInit = Date.now();
-      const worker = await createWorker("eng");
-      timings.ocrInit = Date.now() - startInit;
+      const worker = await createWorker("eng", 1, {
+         corePath: "https://cdn.jsdelivr.net/npm/tesseract.js-core@5.0.2/tesseract-core-simd.wasm.js",
+      });
 
       // 2️⃣ Jalankan OCR dan Upload Cloudinary secara paralel
-      const startParallel = Date.now();
       const [ocrResult, uploadResult] = await Promise.all([worker.recognize(req.file.buffer), upload(ss_order)]);
-      timings.parallelTasks = Date.now() - startParallel;
 
       await worker.terminate();
 
@@ -208,10 +203,13 @@ export const uploadRitase = async (req, res) => {
 
       // 3️⃣ Ekstraksi pickup point
       const pickupOptions = ["1A", "1B", "1C", "2D", "2E", "2F", "3 Domestik", "3 Internasional"];
+
       let pickup = pickupOptions.find((opt) => text.toLowerCase().includes(opt.toLowerCase()));
+
       if (pickup && !pickup.toLowerCase().startsWith("terminal")) {
          pickup = `Terminal ${pickup}`;
       }
+
       if (!pickup) pickup = "Pick up point Tidak ditemukan";
 
       // 4️⃣ Ekstraksi tujuan
@@ -224,36 +222,27 @@ export const uploadRitase = async (req, res) => {
             message: "Pick up point atau tujuan tidak ditemukan",
             pickup,
             tujuan,
-            timings,
-            totalTime: Date.now() - startAll,
          });
       }
 
-      // 5️⃣ Cek duplikat pakai findUnique (super cepat berkat @@unique)
-      const startDuplicate = Date.now();
+      // 5️⃣ Cek duplikat
       const duplicate = await prisma.ritase.findFirst({
          where: {
-            user_id_pickup_point_tujuan: {
-               user_id: req.user.id,
-               pickup_point: pickup,
-               tujuan,
-            },
+            user_id: req.user.id,
+            pickup_point: pickup,
+            tujuan: tujuan,
          },
       });
-      timings.checkDuplicate = Date.now() - startDuplicate;
 
       if (duplicate) {
          return res.status(400).json({
             message: "Pick up point dan tujuan sudah ada",
             pickup,
             tujuan,
-            timings,
-            totalTime: Date.now() - startAll,
          });
       }
 
       // 6️⃣ Simpan ke database
-      const startDB = Date.now();
       const ritase = await prisma.ritase.create({
          data: {
             ss_order: uploadResult.url,
@@ -262,15 +251,11 @@ export const uploadRitase = async (req, res) => {
             user_id: req.user.id,
          },
       });
-      timings.saveDB = Date.now() - startDB;
-
-      timings.total = Date.now() - startAll;
 
       return res.status(201).json({
          message: "Ritase berhasil dibuat",
          pickup,
          tujuan,
-         timings,
          ritase,
       });
    } catch (error) {
@@ -278,8 +263,6 @@ export const uploadRitase = async (req, res) => {
       return res.status(500).json({
          message: "Terjadi kesalahan server",
          error: error.message,
-         timings,
-         totalTime: Date.now() - startAll,
       });
    }
 };
