@@ -191,28 +191,40 @@ export const uploadRitase = async (req, res) => {
    let worker;
 
    try {
-      // ✅ PERUBAHAN: Gunakan 'false' untuk menonaktifkan logger
+      // ✅ Gunakan konfigurasi aman tanpa langPath
       worker = await createWorker({
-         logger: false,
+         logger: () => {}, // Nonaktifkan logger
       });
 
+      // ✅ Urutan load manual
+      await worker.load();
       await worker.loadLanguage("eng");
       await worker.initialize("eng");
 
-      const [ocrResult, uploadResult] = await Promise.all([worker.recognize(req.file.buffer), upload(ss_order)]);
+      // Jalankan OCR dan upload paralel
+      const [ocrResult, uploadResult] = await Promise.all([
+         worker.recognize(req.file.buffer),
+         upload(ss_order),
+      ]);
 
       const text = ocrResult.data.text;
 
+      // Ekstraksi pickup point
       const pickupOptions = ["1A", "1B", "1C", "2D", "2E", "2F", "3 Domestik", "3 Internasional"];
-      let pickup = pickupOptions.find((opt) => text.toLowerCase().includes(opt.toLowerCase()));
+      let pickup = pickupOptions.find((opt) =>
+         text.toLowerCase().includes(opt.toLowerCase())
+      );
 
       if (pickup && !pickup.toLowerCase().startsWith("terminal")) {
          pickup = `Terminal ${pickup}`;
       }
       if (!pickup) pickup = "Pick up point Tidak ditemukan";
 
+      // Ekstraksi tujuan
       const tujuanMatch = text.match(/Menurunkan([\s\S]*?)Penumpang/i);
-      let tujuan = tujuanMatch ? tujuanMatch[1].replace(/\n+/g, " ").trim() : "Tujuan Tidak ditemukan";
+      let tujuan = tujuanMatch
+         ? tujuanMatch[1].replace(/\n+/g, " ").trim()
+         : "Tujuan Tidak ditemukan";
 
       if (pickup.includes("Tidak ditemukan") || tujuan.includes("Tidak ditemukan")) {
          return res.status(400).json({
@@ -222,6 +234,7 @@ export const uploadRitase = async (req, res) => {
          });
       }
 
+      // Cek duplikat
       const duplicate = await prisma.ritase.findFirst({
          where: {
             user_id: req.user.id,
@@ -238,6 +251,7 @@ export const uploadRitase = async (req, res) => {
          });
       }
 
+      // Simpan ke database
       const ritase = await prisma.ritase.create({
          data: {
             ss_order: uploadResult.url,
@@ -252,15 +266,15 @@ export const uploadRitase = async (req, res) => {
          data: ritase,
       });
    } catch (error) {
-      console.error("❌ Error dalam proses uploadRitase:", error);
+      console.error("❌ Error uploadRitase:", error);
       return res.status(500).json({
-         message: "Terjadi kesalahan pada server saat memproses gambar.",
+         message: "Terjadi kesalahan server saat memproses gambar.",
          error: error.message,
       });
    } finally {
       if (worker) {
          await worker.terminate();
-         console.log("Tesseract worker terminated.");
+         console.log("✅ Tesseract worker terminated.");
       }
    }
 };
