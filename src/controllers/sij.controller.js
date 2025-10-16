@@ -1,3 +1,4 @@
+import dayjs from "dayjs";
 import prisma from "../../prisma/client.js";
 import { upload } from "../middleware/cloudinary.js";
 
@@ -154,11 +155,8 @@ export const deleteSij = async (req, res) => {
 export const getLastSij = async (req, res) => {
    const t0 = performance.now();
 
-   const startOfDay = new Date();
-   startOfDay.setHours(0, 0, 0, 0);
-
-   const endOfDay = new Date();
-   endOfDay.setHours(23, 59, 59, 999);
+   const startOfDay = dayjs().tz("Asia/Jakarta").startOf("day").toDate();
+   const endOfDay = dayjs().tz("Asia/Jakarta").endOf("day").toDate();
 
    const t1 = performance.now();
 
