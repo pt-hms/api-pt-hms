@@ -152,26 +152,55 @@ export const deleteSij = async (req, res) => {
 };
 
 export const getLastSij = async (req, res) => {
+   const t0 = performance.now();
+
    const startOfDay = new Date();
    startOfDay.setHours(0, 0, 0, 0);
 
    const endOfDay = new Date();
    endOfDay.setHours(23, 59, 59, 999);
 
-   const lastSij = await prisma.sIJ.findFirst({
-      where: {
-         createdAt: {
-            gte: startOfDay,
-            lte: endOfDay,
-         },
-      },
-      orderBy: {
-         createdAt: "desc",
-      },
-      take: 1,
-   });
+   const t1 = performance.now();
 
-   return res.status(200).json({ no_sij: lastSij.no_sij });
+   try {
+      const queryStart = performance.now();
+
+      const lastSij = await prisma.sIJ.findFirst({
+         where: {
+            createdAt: {
+               gte: startOfDay,
+               lte: endOfDay,
+            },
+         },
+         orderBy: {
+            createdAt: "desc",
+         },
+         take: 1,
+      });
+
+      const queryEnd = performance.now();
+      const tEnd = performance.now();
+
+      return res.status(200).json({
+         message: "OK",
+         no_sij: lastSij ? lastSij.no_sij : null,
+         performance: {
+            setupTanggal: `${(t1 - t0).toFixed(2)} ms`,
+            queryPrisma: `${(queryEnd - queryStart).toFixed(2)} ms`,
+            total: `${(tEnd - t0).toFixed(2)} ms`,
+         },
+      });
+   } catch (error) {
+      const tEnd = performance.now();
+
+      return res.status(500).json({
+         message: "Internal server error",
+         error: error.message,
+         performance: {
+            total: `${(tEnd - t0).toFixed(2)} ms`,
+         },
+      });
+   }
 };
 
 export const printSij = async (req, res) => {
