@@ -189,34 +189,35 @@ export const uploadRitase = async (req, res) => {
    }
 
    try {
-      // 1️⃣ Inisialisasi OCR Worker
-      const worker = await createWorker("eng", 1, {
+      // 🔧 Gunakan konfigurasi penuh sesuai tesseract.js v5
+      const worker = await createWorker({
+         langPath: "https://tessdata.projectnaptha.com/4.0.0", // lokasi data bahasa
          corePath: "https://cdn.jsdelivr.net/npm/tesseract.js-core@5.0.2/tesseract-core-simd.wasm.js",
+         logger: (m) => console.log(m), // opsional, bisa dihapus
       });
 
-      // 2️⃣ Jalankan OCR dan Upload Cloudinary secara paralel
+      await worker.loadLanguage("eng");
+      await worker.initialize("eng");
+
+      // Jalankan OCR dan upload secara paralel
       const [ocrResult, uploadResult] = await Promise.all([worker.recognize(req.file.buffer), upload(ss_order)]);
 
       await worker.terminate();
 
       const text = ocrResult.data.text;
 
-      // 3️⃣ Ekstraksi pickup point
+      // Ekstraksi pickup point
       const pickupOptions = ["1A", "1B", "1C", "2D", "2E", "2F", "3 Domestik", "3 Internasional"];
-
       let pickup = pickupOptions.find((opt) => text.toLowerCase().includes(opt.toLowerCase()));
-
       if (pickup && !pickup.toLowerCase().startsWith("terminal")) {
          pickup = `Terminal ${pickup}`;
       }
-
       if (!pickup) pickup = "Pick up point Tidak ditemukan";
 
-      // 4️⃣ Ekstraksi tujuan
+      // Ekstraksi tujuan
       const tujuanMatch = text.match(/Menurunkan([\s\S]*?)Penumpang/i);
       let tujuan = tujuanMatch ? tujuanMatch[1].replace(/\n+/g, " ").trim() : "Tujuan Tidak ditemukan";
 
-      // ❌ Validasi hasil OCR
       if (pickup.includes("Tidak ditemukan") || tujuan.includes("Tidak ditemukan")) {
          return res.status(400).json({
             message: "Pick up point atau tujuan tidak ditemukan",
@@ -225,7 +226,7 @@ export const uploadRitase = async (req, res) => {
          });
       }
 
-      // 5️⃣ Cek duplikat
+      // Cek duplikat
       const duplicate = await prisma.ritase.findFirst({
          where: {
             user_id: req.user.id,
@@ -242,7 +243,7 @@ export const uploadRitase = async (req, res) => {
          });
       }
 
-      // 6️⃣ Simpan ke database
+      // Simpan ke database
       const ritase = await prisma.ritase.create({
          data: {
             ss_order: uploadResult.url,
