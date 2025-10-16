@@ -191,17 +191,19 @@ export const uploadRitase = async (req, res) => {
    let worker;
 
    try {
-      // ✅ Gunakan konfigurasi aman tanpa langPath
+      // ✅ Konfigurasi kompatibel dengan environment serverless
       worker = await createWorker({
-         logger: () => {}, // Nonaktifkan logger
+         workerPath: "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js",
+         corePath: "https://cdn.jsdelivr.net/npm/tesseract.js-core@5.0.2/tesseract-core-simd.wasm.js",
+         langPath: "https://tessdata.projectnaptha.com/4.0.0",
       });
 
-      // ✅ Urutan load manual
+      // ✅ Urutan load yang benar (wajib diikuti agar tidak trigger langsArr.map bug)
       await worker.load();
       await worker.loadLanguage("eng");
       await worker.initialize("eng");
 
-      // Jalankan OCR dan upload paralel
+      // Jalankan OCR + upload paralel
       const [ocrResult, uploadResult] = await Promise.all([
          worker.recognize(req.file.buffer),
          upload(ss_order),
