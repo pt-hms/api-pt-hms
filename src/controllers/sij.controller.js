@@ -168,9 +168,9 @@ export const getLastSij = async (req, res) => {
 };
 
 export const printSij = async (req, res) => {
-   const bukti_tf = req.file;
+   const { tf_id } = req.body;
 
-   if (!bukti_tf) {
+   if (!tf_id) {
       return res.status(400).json({ message: "Semua field harus diisi" });
    }
 
@@ -181,8 +181,6 @@ export const printSij = async (req, res) => {
    if (!driver) {
       return res.status(400).json({ message: "Driver tidak ditemukan" });
    }
-
-   const bukti_tf_url = await upload(bukti_tf);
 
    const startOfDay = new Date();
    startOfDay.setHours(0, 0, 0, 0);
@@ -212,8 +210,8 @@ export const printSij = async (req, res) => {
    const sij = await prisma.sIJ.create({
       data: {
          no_sij: nextNumber,
-         bukti_tf: bukti_tf_url.url,
          user_id: driver.id,
+         tf_id: Number(tf_id),
       },
    });
 

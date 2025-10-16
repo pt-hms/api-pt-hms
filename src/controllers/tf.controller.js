@@ -22,8 +22,8 @@ export const uploadTf = async (req, res) => {
 };
 
 export const checkTf = async (req, res) => {
-   const today = dayjs().startOf("day"); // awal hari ini (00:00)
-   const tomorrow = dayjs().endOf("day"); // akhir hari ini (23:59)
+   const today = dayjs().startOf("day");
+   const tomorrow = dayjs().endOf("day");
 
    const tf = await prisma.tF.findFirst({
       where: {
@@ -39,6 +39,7 @@ export const checkTf = async (req, res) => {
    if (!tf) {
       return res.status(200).json({
          message: "Belum upload bukti transfer hari ini",
+         tf,
       });
    }
 
