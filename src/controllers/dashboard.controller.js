@@ -33,6 +33,27 @@ export const getDashboard = async (req, res) => {
    let cumulativeDrivers = 0;
    const seenDrivers = new Set();
 
+   // 🔹 Jam 00 - 06 (digabung)
+   const earlyRides = ritaseData.filter((r) => {
+      const hour = dayjs(r.createdAt).tz("Asia/Jakarta").hour();
+      return hour >= 0 && hour < 7;
+   }).length;
+   cumulativeRides += earlyRides;
+
+   const earlyTf = tfData.filter((t) => {
+      const hour = dayjs(t.createdAt).tz("Asia/Jakarta").hour();
+      return hour >= 0 && hour < 7;
+   });
+   earlyTf.forEach((t) => seenDrivers.add(t.user_id));
+   cumulativeDrivers = seenDrivers.size;
+
+   report.push({
+      jam: "00–06",
+      rides: cumulativeRides,
+      dailyActiveDriver: cumulativeDrivers,
+   });
+
+   // 🔹 Jam 07 - 23
    for (let hour = 7; hour <= 23; hour++) {
       const ridesThisHour = ritaseData.filter((r) => dayjs(r.createdAt).tz("Asia/Jakarta").hour() === hour).length;
       cumulativeRides += ridesThisHour;
