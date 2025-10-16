@@ -148,8 +148,9 @@ export const deleteSij = async (req, res) => {
 };
 
 export const getLastSij = async (req, res) => {
-   const startOfDay = dayjs().tz("Asia/Jakarta").startOf("day").toDate();
-   const endOfDay = dayjs().tz("Asia/Jakarta").endOf("day").toDate();
+   // Mulai dan akhir hari di GMT+7
+   const startOfDay = dayjs().tz("Asia/Jakarta").startOf("day").utc().toDate();
+   const endOfDay = dayjs().tz("Asia/Jakarta").endOf("day").utc().toDate();
 
    const lastSij = await prisma.sIJ.findFirst({
       where: {
@@ -159,10 +160,13 @@ export const getLastSij = async (req, res) => {
          },
       },
       orderBy: {
-         createdAt: "desc",
+         no_sij: "desc", // urut berdasarkan no_sij tertinggi
       },
-      take: 1,
-   });
+    });
+
+   if (!lastSij) {
+      return res.status(200).json({ message: "Belum ada SIJ hari ini", no_sij: null });
+   }
 
    return res.status(200).json({ no_sij: lastSij.no_sij });
 };
