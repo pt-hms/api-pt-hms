@@ -184,66 +184,73 @@ export const getMyRitase = async (req, res) => {
 export const uploadRitase = async (req, res) => {
    const ss_order = req.file;
 
+   // 1. Validasi Input Awal
    if (!ss_order) {
-      return res.status(400).json({ message: "Semua field harus diisi" });
+      return res.status(400).json({ message: "File gambar tidak ditemukan." });
    }
 
+   let worker; // Definisikan worker di luar try-catch agar bisa diakses di finally
+
    try {
-      // ✅ Gunakan versi CDN tanpa logger
-      const worker = await createWorker({
-         workerPath: "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js",
-         corePath: "https://cdn.jsdelivr.net/npm/tesseract.js-core@5.0.2/tesseract-core-simd.wasm.js",
-         langPath: "https://tessdata.projectnaptha.com/4.0.0",
+      // 2. Inisialisasi Tesseract.js Worker (Versi 6)
+      // Biarkan Tesseract.js mengambil path dari CDN secara otomatis.
+      // Menonaktifkan logger adalah praktik yang baik untuk produksi.
+      worker = await createWorker({
+         logger: () => {},
       });
 
       await worker.loadLanguage("eng");
       await worker.initialize("eng");
 
-      // Jalankan OCR + upload paralel
-      const [ocrResult, uploadResult] = await Promise.all([worker.recognize(req.file.buffer), upload(ss_order)]);
-
-      await worker.terminate();
+      // 3. Proses OCR dan Upload File secara Paralel
+      // Pastikan Anda memiliki fungsi 'upload' yang mengembalikan { url: '...' }
+      const [ocrResult, uploadResult] = await Promise.all([
+         worker.recognize(req.file.buffer),
+         upload(ss_order), // Asumsikan 'upload' adalah fungsi Anda
+      ]);
 
       const text = ocrResult.data.text;
 
-      // Ekstraksi pickup point
+      // 4. Ekstraksi Informasi dari Teks OCR
       const pickupOptions = ["1A", "1B", "1C", "2D", "2E", "2F", "3 Domestik", "3 Internasional"];
       let pickup = pickupOptions.find((opt) => text.toLowerCase().includes(opt.toLowerCase()));
+
       if (pickup && !pickup.toLowerCase().startsWith("terminal")) {
          pickup = `Terminal ${pickup}`;
       }
       if (!pickup) pickup = "Pick up point Tidak ditemukan";
 
-      // Ekstraksi tujuan
       const tujuanMatch = text.match(/Menurunkan([\s\S]*?)Penumpang/i);
       let tujuan = tujuanMatch ? tujuanMatch[1].replace(/\n+/g, " ").trim() : "Tujuan Tidak ditemukan";
 
+      // 5. Validasi Hasil Ekstraksi
       if (pickup.includes("Tidak ditemukan") || tujuan.includes("Tidak ditemukan")) {
          return res.status(400).json({
-            message: "Pick up point atau tujuan tidak ditemukan",
+            message: "Pick up point atau tujuan tidak dapat diekstraksi dari gambar.",
             pickup,
             tujuan,
          });
       }
 
-      // Cek duplikat
+      // 6. Cek Duplikasi di Database
       const duplicate = await prisma.ritase.findFirst({
          where: {
-            user_id: req.user.id,
+            user_id: req.user.id, // Pastikan req.user.id tersedia dari middleware auth
             pickup_point: pickup,
             tujuan: tujuan,
          },
       });
 
       if (duplicate) {
-         return res.status(400).json({
-            message: "Pick up point dan tujuan sudah ada",
+         return res.status(409).json({
+            // 409 Conflict lebih sesuai untuk duplikat
+            message: "Data ritase dengan pick up point dan tujuan ini sudah ada.",
             pickup,
             tujuan,
          });
       }
 
-      // Simpan ke database
+      // 7. Simpan Data ke Database
       const ritase = await prisma.ritase.create({
          data: {
             ss_order: uploadResult.url,
@@ -253,17 +260,24 @@ export const uploadRitase = async (req, res) => {
          },
       });
 
+      // 8. Kirim Respon Sukses
       return res.status(201).json({
          message: "Ritase berhasil dibuat",
-         pickup,
-         tujuan,
-         ritase,
+         data: ritase,
       });
    } catch (error) {
-      console.error("❌ Error uploadRitase:", error);
+      // 9. Penanganan Error
+      console.error("❌ Error dalam proses uploadRitase:", error);
       return res.status(500).json({
-         message: "Terjadi kesalahan server",
+         message: "Terjadi kesalahan pada server saat memproses gambar.",
          error: error.message,
       });
+   } finally {
+      // 10. Pastikan Worker Selalu dihentikan
+      // Ini sangat penting untuk menghemat sumber daya di Vercel
+      if (worker) {
+         await worker.terminate();
+         console.log("Tesseract worker terminated.");
+      }
    }
 };
