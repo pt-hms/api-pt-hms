@@ -2,11 +2,18 @@ import prisma from "../../prisma/client.js";
 import { createWorker } from "tesseract.js";
 import { deleteImage, upload } from "../middleware/cloudinary.js";
 
-let ocrWorker = null;
-(async () => {
-   ocrWorker = await createWorker("eng");
-   console.log("✅ OCR Worker siap digunakan");
-})();
+let ocrWorkerPromise;
+
+const getOcrWorker = async () => {
+   if (!ocrWorkerPromise) {
+      ocrWorkerPromise = (async () => {
+         const worker = await createWorker("eng");
+         console.log("✅ OCR Worker siap digunakan");
+         return worker;
+      })();
+   }
+   return ocrWorkerPromise;
+};
 
 export const createRitase = async (req, res) => {
    const ss_order = req.file;
@@ -211,6 +218,8 @@ export const uploadRitase = async (req, res) => {
 
    // return res.status(201).json({ message: "Ritase berhasil dibuat", ritase });
 
+   const worker = await getOcrWorker();
+
    const ss_order = req.file;
       if (!ss_order) {
          return res.status(400).json({ message: "Semua field harus diisi" });
@@ -222,7 +231,7 @@ export const uploadRitase = async (req, res) => {
       }
 
       // 🧠 Jalankan OCR langsung dari buffer (tanpa upload dulu)
-      const { data } = await ocrWorker.recognize(ss_order.buffer);
+      const { data } = await worker.recognize(ss_order.buffer);
 
       // 🎯 Ambil pickup point
       const pickupOptions = ["1A", "1B", "1C", "2D", "2E", "2F", "3 Domestik", "3 Internasional"];
