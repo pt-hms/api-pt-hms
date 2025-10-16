@@ -1,4 +1,3 @@
-import dayjs from "dayjs";
 import prisma from "../../prisma/client.js";
 import { upload } from "../middleware/cloudinary.js";
 
@@ -153,52 +152,22 @@ export const deleteSij = async (req, res) => {
 };
 
 export const getLastSij = async (req, res) => {
-   const t0 = performance.now();
-
    const startOfDay = dayjs().tz("Asia/Jakarta").startOf("day").toDate();
    const endOfDay = dayjs().tz("Asia/Jakarta").endOf("day").toDate();
 
-   const t1 = performance.now();
-
-   try {
-      const queryStart = performance.now();
-
-      const lastSij = await prisma.sIJ.findFirst({
-         where: {
-            createdAt: {
-               gte: startOfDay,
-               lte: endOfDay,
-            },
+   const lastSij = await prisma.sIJ.findFirst({
+      where: {
+         createdAt: {
+            gte: startOfDay,
+            lte: endOfDay,
          },
-         orderBy: {
-            createdAt: "desc",
-         },
-         take: 1,
-      });
+      },
+      orderBy: {
+         createdAt: "desc",
+      },
+   });
 
-      const queryEnd = performance.now();
-      const tEnd = performance.now();
-
-      return res.status(200).json({
-         message: "OK",
-         no_sij: lastSij ? lastSij.no_sij : null,
-         performance: {
-            setupTanggal: `${(t1 - t0).toFixed(2)} ms`,
-            queryPrisma: `${(queryEnd - queryStart).toFixed(2)} ms`,
-            total: `${(tEnd - t0).toFixed(2)} ms`,
-         },
-      });
-   } catch (error) {
-      const tEnd = performance.now();
-
-      return res.status(500).json({
-         message: "Internal server error",
-         error: error.message,
-         performance: {
-            total: `${(tEnd - t0).toFixed(2)} ms`,
-         },
-      });
-   }
+   return res.status(200).json({ no_sij: lastSij.no_sij });
 };
 
 export const printSij = async (req, res) => {
