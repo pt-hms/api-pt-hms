@@ -342,7 +342,16 @@ export const getMyRitase = async (req, res) => {
 
    const ritase = await prisma.ritase.findMany({
       where: { user_id: Number(id) },
+      orderBy: { createdAt: "desc" }, // opsional: urutkan dari terbaru
    });
 
-   return res.status(200).json({ ritase });
+   // Kelompokkan berdasarkan tanggal (format YYYY-MM-DD)
+   const grouped = ritase.reduce((acc, item) => {
+      const date = item.createdAt.toISOString().split("T")[0]; // ambil tanggal saja
+      if (!acc[date]) acc[date] = [];
+      acc[date].push(item);
+      return acc;
+   }, {});
+
+   return res.status(200).json({ ritase: grouped });
 };
