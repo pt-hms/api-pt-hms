@@ -10,21 +10,18 @@ export const getDashboard = async (req, res) => {
    const { tanggal } = req.query;
 
    const selectedDate = tanggal || dayjs().tz("Asia/Jakarta").format("YYYY-MM-DD");
+   const nowJakarta = dayjs().tz("Asia/Jakarta");
 
    const startOfDay = dayjs.tz(`${selectedDate} 00:00`, "Asia/Jakarta").utc().toDate();
    const endOfDay = dayjs.tz(`${selectedDate} 23:59:59`, "Asia/Jakarta").utc().toDate();
 
    const ritaseData = await prisma.ritase.findMany({
-      where: {
-         createdAt: { gte: startOfDay, lte: endOfDay },
-      },
+      where: { createdAt: { gte: startOfDay, lte: endOfDay } },
       select: { createdAt: true },
    });
 
    const tfData = await prisma.tF.findMany({
-      where: {
-         createdAt: { gte: startOfDay, lte: endOfDay },
-      },
+      where: { createdAt: { gte: startOfDay, lte: endOfDay } },
       select: { createdAt: true, user_id: true },
    });
 
@@ -55,19 +52,30 @@ export const getDashboard = async (req, res) => {
 
    // 🔹 Jam 07 - 23
    for (let hour = 7; hour <= 23; hour++) {
-      const ridesThisHour = ritaseData.filter((r) => dayjs(r.createdAt).tz("Asia/Jakarta").hour() === hour).length;
-      cumulativeRides += ridesThisHour;
+      const currentHourTime = dayjs.tz(`${selectedDate} ${String(hour).padStart(2, "0")}:00`, "Asia/Jakarta");
 
-      const tfThisHour = tfData.filter((t) => dayjs(t.createdAt).tz("Asia/Jakarta").hour() === hour);
+      // kalau jam ini sudah lewat dari waktu sekarang (atau tanggal lain yang lebih dulu)
+      if (currentHourTime.isBefore(nowJakarta)) {
+         const ridesThisHour = ritaseData.filter((r) => dayjs(r.createdAt).tz("Asia/Jakarta").hour() === hour).length;
+         cumulativeRides += ridesThisHour;
 
-      tfThisHour.forEach((t) => seenDrivers.add(t.user_id));
-      cumulativeDrivers = seenDrivers.size;
+         const tfThisHour = tfData.filter((t) => dayjs(t.createdAt).tz("Asia/Jakarta").hour() === hour);
+         tfThisHour.forEach((t) => seenDrivers.add(t.user_id));
+         cumulativeDrivers = seenDrivers.size;
 
-      report.push({
-         jam: `${String(hour).padStart(2, "0")}:00`,
-         rides: cumulativeRides,
-         dailyActiveDriver: cumulativeDrivers,
-      });
+         report.push({
+            jam: `${String(hour).padStart(2, "0")}:00`,
+            rides: cumulativeRides,
+            dailyActiveDriver: cumulativeDrivers,
+         });
+      } else {
+         // jam belum terlewati → kasih 0
+         report.push({
+            jam: `${String(hour).padStart(2, "0")}:00`,
+            rides: 0,
+            dailyActiveDriver: 0,
+         });
+      }
    }
 
    const totalRides = cumulativeRides;
