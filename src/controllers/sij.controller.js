@@ -168,6 +168,7 @@ export const getLastSij = async (req, res) => {
       orderBy: {
          createdAt: "desc",
       },
+      take: 1,
    });
 
    return res.status(200).json({ no_sij: lastSij.no_sij });
