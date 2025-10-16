@@ -200,14 +200,14 @@ export const uploadRitase = async (req, res) => {
    if (pickup && !pickup.toLowerCase().startsWith("terminal")) {
       pickup = `Terminal ${pickup}`;
    }
-   if (!pickup) pickup = "Pick up point Tidak ditemukan";
+   if (!pickup) pickup = "Pickup point Tidak ditemukan";
 
    const tujuanMatch = text.match(/Menurunkan([\s\S]*?)Penumpang/i);
    let tujuan = tujuanMatch ? tujuanMatch[1].replace(/\n+/g, " ").trim() : "Tujuan Tidak ditemukan";
 
    if (pickup.includes("Tidak ditemukan") || tujuan.includes("Tidak ditemukan")) {
       return res.status(400).json({
-         message: "Pick up point atau tujuan tidak ada digambar.",
+         message: "Pickup point atau Tujuan tidak ada digambar.",
          pickup,
          tujuan,
       });
