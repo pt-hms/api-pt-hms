@@ -207,7 +207,7 @@ export const uploadRitase = async (req, res) => {
 
    if (pickup.includes("Tidak ditemukan") || tujuan.includes("Tidak ditemukan")) {
       return res.status(400).json({
-         message: "Pick up point atau tujuan tidak dapat diekstraksi dari gambar.",
+         message: "Pick up point atau tujuan tidak ada digambar.",
          pickup,
          tujuan,
       });
