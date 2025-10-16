@@ -1,3 +1,4 @@
+import dayjs from "dayjs";
 import prisma from "../../prisma/client.js";
 import { upload } from "../middleware/cloudinary.js";
 
@@ -152,6 +153,22 @@ export const deleteSij = async (req, res) => {
 };
 
 export const getLastSij = async (req, res) => {
+   // const startOfDay = dayjs().tz("Asia/Jakarta").startOf("day").toDate();
+   // const endOfDay = dayjs().tz("Asia/Jakarta").endOf("day").toDate();
+
+   // const lastSij = await prisma.sIJ.findFirst({
+   //    where: {
+   //       createdAt: {
+   //          gte: startOfDay,
+   //          lte: endOfDay,
+   //       },
+   //    },
+   //    orderBy: {
+   //       createdAt: "desc",
+   //    },
+   // });
+
+   // return res.status(200).json({ no_sij: lastSij.no_sij });
    const startOfDay = dayjs().tz("Asia/Jakarta").startOf("day").toDate();
    const endOfDay = dayjs().tz("Asia/Jakarta").endOf("day").toDate();
 
@@ -165,6 +182,7 @@ export const getLastSij = async (req, res) => {
       orderBy: {
          createdAt: "desc",
       },
+      take: 1,
    });
 
    return res.status(200).json({ no_sij: lastSij.no_sij });
