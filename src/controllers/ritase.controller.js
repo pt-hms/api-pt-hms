@@ -12,7 +12,7 @@ if (!globalThis.ocrWorkerPromise) {
 
 export const createRitase = async (req, res) => {
    const ss_order = req.file;
-   const { no_pol } = req.body;
+   const { no_pol, tanggal, jam } = req.body;
 
    if (!ss_order || !no_pol) {
       return res.status(400).json({ message: "Semua field harus diisi" });
@@ -71,6 +71,7 @@ export const createRitase = async (req, res) => {
          pickup_point: pickup,
          tujuan,
          user_id: driver.id,
+         createdAt: new Date(`${tanggal} ${jam}`),
       },
    });
 
@@ -156,65 +157,62 @@ export const deleteRitase = async (req, res) => {
    return res.status(200).json({ message: "Ritase berhasil dihapus" });
 };
 
-// export const uploadRitase = async (req, res) => {
-//    const ss_order = req.file;
+export const uploadRitase = async (req, res) => {
+   const ss_order = req.file;
 
-//    if (!ss_order) {
-//       return res.status(400).json({ message: "Semua field harus diisi" });
-//    }
+   if (!ss_order) {
+      return res.status(400).json({ message: "Semua field harus diisi" });
+   }
 
-//    const worker = await createWorker();
-//    await worker.load();
-//    await worker.loadLanguage("ind");
-//    await worker.initialize("ind");
-//    const { data } = await worker.recognize(req.file.buffer);
+   const worker = await createWorker("eng");
+   const { data } = await worker.recognize(req.file.buffer);
 
-//    await worker.terminate();
+   await worker.terminate();
 
-//    const pickupOptions = ["1A", "1B", "1C", "2D", "2E", "2F", "3 Domestik", "3 Internasional"];
-//    let pickup = pickupOptions.find((opt) => data.text.toLowerCase().includes(opt.toLowerCase()));
-//    if (pickup) {
-//       if (!pickup.toLowerCase().startsWith("terminal")) {
-//          pickup = `Terminal ${pickup}`;
-//       }
-//    } else {
-//       pickup = "Pick up point Tidak ditemukan";
-//    }
+   const pickupOptions = ["1A", "1B", "1C", "2D", "2E", "2F", "3 Domestik", "3 Internasional"];
+   let pickup = pickupOptions.find((opt) => data.text.toLowerCase().includes(opt.toLowerCase()));
+   if (pickup) {
+      if (!pickup.toLowerCase().startsWith("terminal")) {
+         pickup = `Terminal ${pickup}`;
+      }
+   } else {
+      pickup = "Pick up point Tidak ditemukan";
+   }
 
-//    const tujuanMatch = data.text.match(/Menurunkan([\s\S]*?)Penumpang/i);
-//    let tujuan = null;
-//    if (tujuanMatch) {
-//       tujuan = tujuanMatch[1].replace(/\n+/g, " ").trim();
-//    } else {
-//       tujuan = "Tujuan Tidak ditemukan";
-//    }
+   const tujuanMatch = data.text.match(/Menurunkan([\s\S]*?)Penumpang/i);
+   let tujuan = null;
+   if (tujuanMatch) {
+      tujuan = tujuanMatch[1].replace(/\n+/g, " ").trim();
+   } else {
+      tujuan = "Tujuan Tidak ditemukan";
+   }
 
-//    if (pickup === "Pick up point Tidak ditemukan" || tujuan === "Tujuan Tidak ditemukan") {
-//       await deleteImage(order.public_id);
-//       return res.status(400).json({ message: "Pick up point atau tujuan tidak ditemukan" });
-//    }
+   if (pickup === "Pick up point Tidak ditemukan" || tujuan === "Tujuan Tidak ditemukan") {
+      await deleteImage(order.public_id);
+      return res.status(400).json({ message: "Pick up point atau tujuan tidak ditemukan" });
+   }
 
-//    const duplicate = await prisma.ritase.findFirst({
-//       where: { user_id: req.user.id, pickup_point: pickup, tujuan: tujuan },
-//    });
+   const duplicate = await prisma.ritase.findFirst({
+      where: { user_id: req.user.id, pickup_point: pickup, tujuan: tujuan },
+   });
 
-//    if (duplicate) {
-//       await deleteImage(order.public_id);
-//       return res.status(400).json({ message: "Pick up point dan tujuan sudah ada" });
-//    }
+   if (duplicate) {
+      await deleteImage(order.public_id);
+      return res.status(400).json({ message: "Pick up point dan tujuan sudah ada" });
+   }
 
-//    const order = await upload(ss_order);
+   const order = await upload(ss_order);
 
-//    const ritase = await prisma.ritase.create({
-//       data: {
-//          ss_order: order.url,
-//          pickup_point: pickup,
-//          tujuan,
-//          user_id: req.user.id,
-//       },
-//    });
+   const ritase = await prisma.ritase.create({
+      data: {
+         ss_order: order.url,
+         pickup_point: pickup,
+         tujuan,
+         user_id: req.user.id,
+      },
+   });
 
-//    return res.status(201).json({ message: "Ritase berhasil dibuat", ritase });
+   return res.status(201).json({ message: "Ritase berhasil dibuat", ritase });
 
 //    // const worker = await getOcrWorker();
 
@@ -268,74 +266,74 @@ export const deleteRitase = async (req, res) => {
 //    //    });
 
 //    //    return res.status(201).json({ message: "Ritase berhasil dibuat", ritase });
-// };
-
-export const uploadRitase = async (req, res) => {
-   const ss_order = req.file;
-
-   if (!ss_order) {
-      return res.status(400).json({ message: "Semua field harus diisi" });
-   }
-
-   // ☁️ Upload ke Cloudinary (otomatis dikompres lewat sharp)
-   const order = await upload(ss_order);
-
-   // 🔍 Kirim ke OCR.Space
-   const formData = new FormData();
-   formData.append("url", order.url);
-   formData.append("language", "eng");
-   formData.append("isOverlayRequired", "false");
-
-   const ocrResponse = await axios.post("https://api.ocr.space/parse/image", formData, {
-      headers: {
-         apikey: process.env.OCR_SPACE_API_KEY,
-         ...formData.getHeaders(),
-      },
-   });
-
-   const ocrText = ocrResponse.data?.ParsedResults?.[0]?.ParsedText || "";
-   if (!ocrText) {
-      await deleteImage(order.public_id);
-      return res.status(400).json({ message: "Teks tidak terbaca dari gambar" });
-   }
-
-   // 🎯 Ambil pickup point
-   const pickupOptions = ["1A", "1B", "1C", "2D", "2E", "2F", "3 Domestik", "3 Internasional"];
-   let pickup = pickupOptions.find((opt) => ocrText.toLowerCase().includes(opt.toLowerCase()));
-   pickup = pickup ? (pickup.toLowerCase().startsWith("terminal") ? pickup : `Terminal ${pickup}`) : null;
-
-   // 🎯 Ambil tujuan
-   const tujuanMatch = ocrText.match(/Menurunkan([\s\S]*?)Penumpang/i);
-   const tujuan = tujuanMatch ? tujuanMatch[1].replace(/\n+/g, " ").trim() : null;
-
-   // ❌ Jika tidak ditemukan
-   if (!pickup || !tujuan) {
-      await deleteImage(order.public_id);
-      return res.status(400).json({ message: "Pick up point atau tujuan tidak ditemukan" });
-   }
-
-   // 🔍 Cek duplikat di database
-   const duplicate = await prisma.ritase.findFirst({
-      where: { user_id: req.user.id, pickup_point: pickup, tujuan },
-   });
-
-   if (duplicate) {
-      await deleteImage(order.public_id);
-      return res.status(400).json({ message: "Pick up point dan tujuan sudah ada" });
-   }
-
-   // 💾 Simpan ke database
-   const ritase = await prisma.ritase.create({
-      data: {
-         ss_order: order.url,
-         pickup_point: pickup,
-         tujuan,
-         user_id: req.user.id,
-      },
-   });
-
-   return res.status(201).json({ message: "Ritase berhasil dibuat", ritase });
 };
+
+// export const uploadRitase = async (req, res) => {
+//    const ss_order = req.file;
+
+//    if (!ss_order) {
+//       return res.status(400).json({ message: "Semua field harus diisi" });
+//    }
+
+//    // ☁️ Upload ke Cloudinary (otomatis dikompres lewat sharp)
+//    const order = await upload(ss_order);
+
+//    // 🔍 Kirim ke OCR.Space
+//    const formData = new FormData();
+//    formData.append("url", order.url);
+//    formData.append("language", "eng");
+//    formData.append("isOverlayRequired", "false");
+
+//    const ocrResponse = await axios.post("https://api.ocr.space/parse/image", formData, {
+//       headers: {
+//          apikey: process.env.OCR_SPACE_API_KEY,
+//          ...formData.getHeaders(),
+//       },
+//    });
+
+//    const ocrText = ocrResponse.data?.ParsedResults?.[0]?.ParsedText || "";
+//    if (!ocrText) {
+//       await deleteImage(order.public_id);
+//       return res.status(400).json({ message: "Teks tidak terbaca dari gambar" });
+//    }
+
+//    // 🎯 Ambil pickup point
+//    const pickupOptions = ["1A", "1B", "1C", "2D", "2E", "2F", "3 Domestik", "3 Internasional"];
+//    let pickup = pickupOptions.find((opt) => ocrText.toLowerCase().includes(opt.toLowerCase()));
+//    pickup = pickup ? (pickup.toLowerCase().startsWith("terminal") ? pickup : `Terminal ${pickup}`) : null;
+
+//    // 🎯 Ambil tujuan
+//    const tujuanMatch = ocrText.match(/Menurunkan([\s\S]*?)Penumpang/i);
+//    const tujuan = tujuanMatch ? tujuanMatch[1].replace(/\n+/g, " ").trim() : null;
+
+//    // ❌ Jika tidak ditemukan
+//    if (!pickup || !tujuan) {
+//       await deleteImage(order.public_id);
+//       return res.status(400).json({ message: "Pick up point atau tujuan tidak ditemukan" });
+//    }
+
+//    // 🔍 Cek duplikat di database
+//    const duplicate = await prisma.ritase.findFirst({
+//       where: { user_id: req.user.id, pickup_point: pickup, tujuan },
+//    });
+
+//    if (duplicate) {
+//       await deleteImage(order.public_id);
+//       return res.status(400).json({ message: "Pick up point dan tujuan sudah ada" });
+//    }
+
+//    // 💾 Simpan ke database
+//    const ritase = await prisma.ritase.create({
+//       data: {
+//          ss_order: order.url,
+//          pickup_point: pickup,
+//          tujuan,
+//          user_id: req.user.id,
+//       },
+//    });
+
+//    return res.status(201).json({ message: "Ritase berhasil dibuat", ritase });
+// };
 
 export const getMyRitase = async (req, res) => {
    const { id } = req.user;

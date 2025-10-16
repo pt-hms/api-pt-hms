@@ -1,16 +1,19 @@
-// prisma/seed.js
 import prisma from "./client.js";
 import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc.js";
+import timezone from "dayjs/plugin/timezone.js";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const main = async () => {
    console.log("🌱 Starting seeding process...");
 
-   // 🔹 Hapus data lama biar clean
+   // Bersihkan database dulu biar gak dobel
    await prisma.sIJ.deleteMany();
-   await prisma.ritase.deleteMany();
    await prisma.tF.deleteMany();
+   await prisma.ritase.deleteMany();
    await prisma.user.deleteMany();
-   console.log("🧹 Old data cleared");
 
    // 1️⃣ Buat admin
    const admin = await prisma.user.create({
@@ -21,9 +24,9 @@ const main = async () => {
          kategori: "PREMIUM",
          mobil: "AVANZA",
          no_kep: "KEP000",
-         exp_kep: "2026-12-31T00:00:00Z",
-         no_hp: "08120000000",
-         no_darurat: "08120000001",
+         exp_kep: "2025-12-31T00:00:00Z",
+         no_hp: "08123456789",
+         no_darurat: "08234567890",
          password: "12345678",
          role: "admin",
       },
@@ -39,9 +42,9 @@ const main = async () => {
             foto_profil: "https://cdn-icons-png.freepik.com/512/9703/9703596.png",
             nama: `Driver ${i}`,
             no_pol: `B ${1000 + i} HMS`,
-            kategori: kategoriList[i % 2],
+            kategori: kategoriList[Math.floor(Math.random() * kategoriList.length)],
             mobil: `Avanza ${i}`,
-            no_kep: `KEP00${i}`,
+            no_kep: `KEP${i.toString().padStart(3, "0")}`,
             exp_kep: "2026-12-31T00:00:00Z",
             no_hp: `0813245768${i}`,
             no_darurat: `0898765432${i}`,
@@ -53,65 +56,55 @@ const main = async () => {
    }
    console.log(`✅ Created ${drivers.length} drivers`);
 
-   // 3️⃣ Range tanggal 9–16 Oktober 2025
-   const startDate = dayjs("2025-10-09");
-   const endDate = dayjs("2025-10-16");
-   const totalDays = endDate.diff(startDate, "day") + 1;
+   // 3️⃣ Tanggal range: 9–16 Oktober (Asia/Jakarta, tapi disimpan UTC)
+   const startDate = dayjs.tz("2025-10-09", "Asia/Jakarta");
+   const endDate = dayjs.tz("2025-10-16", "Asia/Jakarta");
 
-   for (let d = 0; d < totalDays; d++) {
-      const date = startDate.add(d, "day").format("YYYY-MM-DD");
-      console.log(`📅 Seeding data untuk tanggal ${date}...`);
+   for (let date = startDate; date.isBefore(endDate) || date.isSame(endDate, "day"); date = date.add(1, "day")) {
+      console.log(`📅 Seeding data untuk tanggal ${date.format("YYYY-MM-DD")}`);
+      let sijCounter = 1; // reset tiap hari
 
       for (const driver of drivers) {
-         // jumlah random per hari (35–65)
-         const ritaseCount = Math.floor(Math.random() * 31) + 35;
-         const sijCount = Math.floor(Math.random() * 31) + 35;
-
-         // 🔸 Buat TF
+         // 1️⃣ TF per hari per user
          const tf = await prisma.tF.create({
             data: {
-               bukti_tf: `bukti_tf_${driver.id}_${date}.jpg`,
+               bukti_tf: `bukti_${driver.nama}_${date.format("YYYYMMDD")}.jpg`,
                user_id: driver.id,
-               createdAt: dayjs(`${date} 07:00`).toDate(),
+               createdAt: date.utc().toDate(), // simpan UTC
             },
          });
 
-         // 🔸 Buat SIJ
-         for (let i = 0; i < sijCount; i++) {
-            const randomHour = Math.floor(Math.random() * 17) + 7; // jam 07–23
-            const sijTime = dayjs(`${date} ${randomHour}:${Math.floor(Math.random() * 59)}`)
-               .second(Math.floor(Math.random() * 59))
-               .toDate();
+         // jumlah random 35–65
+         const sijCount = Math.floor(Math.random() * 31) + 35;
+         const ritaseCount = Math.floor(Math.random() * 31) + 35;
 
+         // 2️⃣ SIJ per user
+         for (let i = 0; i < sijCount; i++) {
+            const sijTime = date.add(Math.floor(Math.random() * 24), "hour").add(Math.floor(Math.random() * 60), "minute");
             await prisma.sIJ.create({
                data: {
-                  no_sij: `SIJ-${driver.id}-${date}-${i + 1}`,
+                  no_sij: sijCounter.toString().padStart(3, "0"),
                   user_id: driver.id,
                   tf_id: tf.id,
-                  createdAt: sijTime,
+                  createdAt: sijTime.tz("Asia/Jakarta").utc().toDate(),
                },
             });
+            sijCounter++;
          }
 
-         // 🔸 Buat Ritase
+         // 3️⃣ Ritase per user
          for (let j = 0; j < ritaseCount; j++) {
-            const randomHour = Math.floor(Math.random() * 17) + 7;
-            const ritaseTime = dayjs(`${date} ${randomHour}:${Math.floor(Math.random() * 59)}`)
-               .second(Math.floor(Math.random() * 59))
-               .toDate();
-
+            const rTime = date.add(Math.floor(Math.random() * 24), "hour").add(Math.floor(Math.random() * 60), "minute");
             await prisma.ritase.create({
                data: {
-                  ss_order: `ORDER-${driver.id}-${date}-${j + 1}`,
-                  pickup_point: `Pickup-${driver.nama}`,
-                  tujuan: `Tujuan-${driver.nama}`,
+                  ss_order: `ORDER-${driver.id}-${date.format("MMDD")}-${j + 1}`,
+                  pickup_point: `Pickup-${driver.nama}-${j + 1}`,
+                  tujuan: `Tujuan-${driver.nama}-${j + 1}`,
                   user_id: driver.id,
-                  createdAt: ritaseTime,
+                  createdAt: rTime.tz("Asia/Jakarta").utc().toDate(),
                },
             });
          }
-
-         console.log(`🚗 ${driver.nama} → ${ritaseCount} ritase & ${sijCount} SIJ dibuat (${date})`);
       }
    }
 
@@ -123,7 +116,7 @@ main()
       await prisma.$disconnect();
    })
    .catch(async (e) => {
-      console.error(e);
+      console.error("❌ Error during seeding:", e);
       await prisma.$disconnect();
       process.exit(1);
    });

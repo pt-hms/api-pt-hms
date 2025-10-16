@@ -22,8 +22,8 @@ export const uploadTf = async (req, res) => {
 };
 
 export const checkTf = async (req, res) => {
-   const today = dayjs().startOf("day");
-   const tomorrow = dayjs().endOf("day");
+   const today = dayjs().tz("Asia/Jakarta").startOf("day");
+   const tomorrow = dayjs().tz("Asia/Jakarta").endOf("day");
 
    const tf = await prisma.tF.findFirst({
       where: {
