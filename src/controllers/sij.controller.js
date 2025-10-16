@@ -3,9 +3,9 @@ import prisma from "../../prisma/client.js";
 import { upload } from "../middleware/cloudinary.js";
 
 export const createSij = async (req, res) => {
-   const { tf_id, no_pol } = req.body;
+   const { tf_id, no_pol, tanggal_jam } = req.body;
 
-   if (!tf_id || !no_pol) {
+   if (!tf_id || !no_pol || !tanggal_jam) {
       return res.status(400).json({ message: "Semua field harus diisi" });
    }
 
@@ -26,11 +26,10 @@ export const createSij = async (req, res) => {
       return res.status(400).json({ message: "Bukti Transfer tidak ditemukan" });
    }
 
-   const startOfDay = new Date();
-   startOfDay.setHours(0, 0, 0, 0);
+   const createdAtUTC = dayjs.tz(tanggal_jam, "Asia/Jakarta").utc().toDate();
 
-   const endOfDay = new Date();
-   endOfDay.setHours(23, 59, 59, 999);
+   const startOfDay = dayjs.tz("Asia/Jakarta").startOf("day").toDate();
+   const endOfDay = dayjs.tz("Asia/Jakarta").endOf("day").toDate();
 
    const lastSij = await prisma.sIJ.findFirst({
       where: {
@@ -47,8 +46,7 @@ export const createSij = async (req, res) => {
    let nextNumber = "001";
    if (lastSij) {
       const lastNum = parseInt(lastSij.no_sij, 10);
-      const newNum = (lastNum + 1).toString().padStart(3, "0");
-      nextNumber = newNum;
+      nextNumber = (lastNum + 1).toString().padStart(3, "0");
    }
 
    const sij = await prisma.sIJ.create({
@@ -56,6 +54,7 @@ export const createSij = async (req, res) => {
          no_sij: nextNumber,
          user_id: driver.id,
          tf_id: Number(tf_id),
+         createdAt: createdAtUTC,
       },
    });
 
