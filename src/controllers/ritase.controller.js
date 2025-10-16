@@ -189,9 +189,8 @@ export const uploadRitase = async (req, res) => {
    }
 
    try {
-      // 🧠 Inisialisasi Tesseract.js secara manual agar 100% pakai CDN
+      // ✅ Gunakan versi CDN tanpa logger
       const worker = await createWorker({
-         logger: (m) => console.log(m),
          workerPath: "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js",
          corePath: "https://cdn.jsdelivr.net/npm/tesseract.js-core@5.0.2/tesseract-core-simd.wasm.js",
          langPath: "https://tessdata.projectnaptha.com/4.0.0",
