@@ -26,7 +26,6 @@ route.get('/dashboard', auth, dashboardController.getDashboard);
 // drivers
 route.post('/drivers', auth, upload.single("foto_profil"), driversController.createDriver);
 route.get('/drivers', auth, driversController.getAllDrivers);
-route.get('/drivers/:id', auth, driversController.getDriverById);
 route.put('/drivers/:id', auth, upload.single("foto_profil"), driversController.updateDriver);
 route.delete('/drivers', auth, driversController.deleteDriver);
 

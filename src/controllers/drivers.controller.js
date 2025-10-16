@@ -61,24 +61,9 @@ export const getAllDrivers = async (req, res) => {
    return res.status(200).json({ drivers });
 };
 
-export const getDriverById = async (req, res) => {
-   const { id } = req.params;
-
-   const driver = await prisma.user.findUnique({
-      where: { id: Number(id) },
-   });
-
-   if (!driver) {
-      return res.status(400).json({ message: "Driver tidak ditemukan" });
-   }
-
-   return res.status(200).json({ driver });
-};
-
 export const updateDriver = async (req, res) => {
    const { id } = req.params;
-   const foto_profil = req.file;
-   const { nama, no_pol, kategori, mobil, no_kep, exp_kep, no_hp, no_darurat, password } = req.body;
+   const { foto_profil, nama, no_pol, kategori, mobil, no_kep, exp_kep, no_hp, no_darurat, password } = req.body;
 
    if (!foto_profil || !nama || !no_pol || !kategori || !mobil || !no_kep || !exp_kep || !no_hp || !no_darurat || !password) {
       return res.status(400).json({ message: "Semua field harus diisi" });
@@ -92,13 +77,18 @@ export const updateDriver = async (req, res) => {
       return res.status(400).json({ message: "Driver tidak ditemukan" });
    }
 
-   const profil_url = await upload(foto_profil);
+   let fotoUrl = foto_profil;
+   if (typeof foto_profil !== "string") {
+      const uploadResult = await upload(foto_profil);
+      fotoUrl = uploadResult.url;
+   }
+
    const exp_kep_iso = new Date(exp_kep).toISOString();
 
    await prisma.user.update({
       where: { id: Number(id) },
       data: {
-         foto_profil: profil_url.url,
+         foto_profil: fotoUrl,
          nama: nama.toUpperCase(),
          no_pol: no_pol.toUpperCase(),
          kategori: kategori.toUpperCase(),
@@ -116,7 +106,10 @@ export const updateDriver = async (req, res) => {
       where: { id: Number(id) },
    });
 
-   return res.status(200).json({ message: "Driver berhasil diperbarui", driver: updatedDriver });
+   return res.status(200).json({
+      message: "Driver berhasil diperbarui",
+      driver: updatedDriver,
+   });
 };
 
 export const deleteDriver = async (req, res) => {
