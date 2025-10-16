@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 import prisma from "../../prisma/client.js";
-import { upload } from "../middleware/cloudinary";
+import { upload } from "../middleware/cloudinary.js";
 
 export const uploadTf = async (req, res) => {
    const bukti_tf = req.file;
@@ -11,14 +11,14 @@ export const uploadTf = async (req, res) => {
 
    const bukti_tf_url = await upload(bukti_tf);
 
-   await prisma.tF.create({
+   const tf = await prisma.tF.create({
       data: {
          bukti_tf: bukti_tf_url.url,
          user_id: req.user.id,
       },
    });
 
-   return res.status(200).json({ message: "TF berhasil diupload" });
+   return res.status(200).json({ message: "TF berhasil diupload", tf });
 };
 
 export const checkTf = async (req, res) => {
