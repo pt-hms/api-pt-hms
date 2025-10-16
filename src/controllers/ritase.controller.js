@@ -3,8 +3,6 @@ import { createWorker } from "tesseract.js";
 import { deleteImage, upload } from "../middleware/cloudinary.js";
 
 const worker = await createWorker("eng");
-await worker.loadLanguage("eng");
-await worker.initialize("eng");
 
 export const createRitase = async (req, res) => {
    const ss_order = req.file;
@@ -160,12 +158,12 @@ export const uploadRitase = async (req, res) => {
    }
 
    const order = await upload(ss_order);
-   const data = await worker.recognize(order.url);
+   const { data } = await worker.recognize(req.file.buffer);
 
    await worker.terminate();
 
    const pickupOptions = ["1A", "1B", "1C", "2D", "2E", "2F", "3 Domestik", "3 Internasional"];
-   let pickup = pickupOptions.find((opt) => data.data.text.toLowerCase().includes(opt.toLowerCase()));
+   let pickup = pickupOptions.find((opt) => data.text.toLowerCase().includes(opt.toLowerCase()));
    if (pickup) {
       if (!pickup.toLowerCase().startsWith("terminal")) {
          pickup = `Terminal ${pickup}`;
@@ -174,7 +172,7 @@ export const uploadRitase = async (req, res) => {
       pickup = "Pick up point Tidak ditemukan";
    }
 
-   const tujuanMatch = data.data.text.match(/Menurunkan([\s\S]*?)Penumpang/i);
+   const tujuanMatch = data.text.match(/Menurunkan([\s\S]*?)Penumpang/i);
    let tujuan = null;
    if (tujuanMatch) {
       tujuan = tujuanMatch[1].replace(/\n+/g, " ").trim();
@@ -188,7 +186,7 @@ export const uploadRitase = async (req, res) => {
    }
 
    const duplicate = await prisma.ritase.findFirst({
-      where: { user_id: driver.id, pickup_point: pickup, tujuan: tujuan },
+      where: { user_id: req.user.id, pickup_point: pickup, tujuan: tujuan },
    });
 
    if (duplicate) {
@@ -201,7 +199,7 @@ export const uploadRitase = async (req, res) => {
          ss_order: order.url,
          pickup_point: pickup,
          tujuan,
-         user_id: driver.id,
+         user_id: req.user.id,
       },
    });
 
