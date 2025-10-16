@@ -22,7 +22,7 @@ model User {
   mobil       String
   no_kep      String
   exp_kep     DateTime @db.Date
-  no_hp       String   @unique
+  no_hp       String
   no_darurat  String
   password    String
   role        String

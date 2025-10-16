@@ -222,11 +222,9 @@ export const printSij = async (req, res) => {
       return res.status(400).json({ message: "Bukti Transfer tidak ditemukan" });
    }
 
-   const startOfDay = new Date();
-   startOfDay.setHours(0, 0, 0, 0);
-
-   const endOfDay = new Date();
-   endOfDay.setHours(23, 59, 59, 999);
+   // ✅ Gunakan timezone Asia/Jakarta
+   const startOfDay = dayjs().tz("Asia/Jakarta").startOf("day").toDate();
+   const endOfDay = dayjs().tz("Asia/Jakarta").endOf("day").toDate();
 
    const lastSij = await prisma.sIJ.findFirst({
       where: {
