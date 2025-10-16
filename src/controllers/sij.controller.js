@@ -61,22 +61,17 @@ export const createSij = async (req, res) => {
 };
 
 export const getAllSij = async (req, res) => {
-   // const sij = await prisma.sIJ.findMany({
-   //    orderBy: {
-   //       id: "desc",
-   //    },
-   //    include: {
-   //       user: true,
-   //    },
-   // });
-
    const sij = await prisma.user.findMany({
       where: { role: "driver" },
       orderBy: {
          id: "desc",
       },
       include: {
-         sij: true,
+         sij: {
+            orderBy: {
+               id: "desc",
+            },
+         },
       },
    });
 
@@ -153,22 +148,6 @@ export const deleteSij = async (req, res) => {
 };
 
 export const getLastSij = async (req, res) => {
-   // const startOfDay = dayjs().tz("Asia/Jakarta").startOf("day").toDate();
-   // const endOfDay = dayjs().tz("Asia/Jakarta").endOf("day").toDate();
-
-   // const lastSij = await prisma.sIJ.findFirst({
-   //    where: {
-   //       createdAt: {
-   //          gte: startOfDay,
-   //          lte: endOfDay,
-   //       },
-   //    },
-   //    orderBy: {
-   //       createdAt: "desc",
-   //    },
-   // });
-
-   // return res.status(200).json({ no_sij: lastSij.no_sij });
    const startOfDay = dayjs().tz("Asia/Jakarta").startOf("day").toDate();
    const endOfDay = dayjs().tz("Asia/Jakarta").endOf("day").toDate();
 
