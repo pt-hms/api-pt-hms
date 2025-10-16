@@ -189,17 +189,18 @@ export const uploadRitase = async (req, res) => {
    }
 
    try {
-      // 🔧 Gunakan konfigurasi penuh sesuai tesseract.js v5
+      // 🧠 Inisialisasi worker dengan corePath dan workerPath dari CDN
       const worker = await createWorker({
-         langPath: "https://tessdata.projectnaptha.com/4.0.0", // lokasi data bahasa
+         workerPath: "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js",
          corePath: "https://cdn.jsdelivr.net/npm/tesseract.js-core@5.0.2/tesseract-core-simd.wasm.js",
-         logger: (m) => console.log(m), // opsional, bisa dihapus
+         langPath: "https://tessdata.projectnaptha.com/4.0.0",
+         logger: (m) => console.log(m), // opsional
       });
 
       await worker.loadLanguage("eng");
       await worker.initialize("eng");
 
-      // Jalankan OCR dan upload secara paralel
+      // Jalankan OCR dan upload paralel
       const [ocrResult, uploadResult] = await Promise.all([worker.recognize(req.file.buffer), upload(ss_order)]);
 
       await worker.terminate();
