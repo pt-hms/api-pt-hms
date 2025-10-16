@@ -38,13 +38,11 @@ export const checkTf = async (req, res) => {
 
    if (!tf) {
       return res.status(200).json({
-         uploaded: false,
          message: "Belum upload bukti transfer hari ini",
       });
    }
 
    return res.status(200).json({
-      uploaded: true,
       message: "Sudah upload bukti transfer hari ini",
       tf,
    });
