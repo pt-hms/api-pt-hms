@@ -6,6 +6,7 @@ import * as dashboardController from '../controllers/dashboard.controller.js';
 import * as driversController from '../controllers/drivers.controller.js';
 import * as sijController from '../controllers/sij.controller.js';
 import * as ritaseController from '../controllers/ritase.controller.js';
+import * as tfController from '../controllers/tf.controller.js';
 import multer from 'multer';
 
 const route = Router();
@@ -46,5 +47,9 @@ route.put('/ritase/:id', auth, ritaseController.updateRitase);
 route.delete('/ritase/:id', auth, ritaseController.deleteRitase);
 route.post('/ritase-upload', auth, upload.single("ss_order"), ritaseController.uploadRitase);
 route.get('/ritase-saya', auth, ritaseController.getMyRitase);
+
+// tf
+route.post('/tf', auth, upload.single("bukti_tf"), tfController.uploadTf);
+route.get('/tf', auth, tfController.checkTf);
 
 export default route;

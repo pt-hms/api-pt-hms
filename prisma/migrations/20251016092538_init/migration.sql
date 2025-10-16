@@ -1,0 +1,13 @@
+-- CreateTable
+CREATE TABLE "TF" (
+    "id" SERIAL NOT NULL,
+    "bukti_tf" TEXT NOT NULL,
+    "user_id" INTEGER NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "TF_pkey" PRIMARY KEY ("id")
+);
+
+-- AddForeignKey
+ALTER TABLE "TF" ADD CONSTRAINT "TF_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;

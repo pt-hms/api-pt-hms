@@ -14,47 +14,59 @@ datasource db {
 }
 
 model User {
-  id            Int         @id @default(autoincrement())
-  foto_profil   String
-  nama          String
-  no_pol        String      @unique
-  kategori      String
-  mobil         String
-  no_kep        String
-  exp_kep       DateTime    @db.Date
-  no_hp         String      @unique
-  no_darurat    String
-  password      String
-  role          String
+  id          Int      @id @default(autoincrement())
+  foto_profil String
+  nama        String
+  no_pol      String   @unique
+  kategori    String
+  mobil       String
+  no_kep      String
+  exp_kep     DateTime @db.Date
+  no_hp       String   @unique
+  no_darurat  String
+  password    String
+  role        String
 
-  ritase        Ritase[]
-  sij           SIJ[]
+  ritase Ritase[]
+  sij    SIJ[]
 
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  TF        TF[]
 }
 
 model SIJ {
-  id            Int         @id() @default(autoincrement())
-  no_sij        String
-  bukti_tf      String
-  user_id       Int
+  id       Int    @id() @default(autoincrement())
+  no_sij   String
+  bukti_tf String
+  user_id  Int
 
-  user          User        @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TF {
+  id       Int    @id() @default(autoincrement())
+  bukti_tf String
+  user_id  Int
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Ritase {
-  id            Int         @id() @default(autoincrement())
-  ss_order      String
-  pickup_point  String
-  tujuan        String
-  user_id       Int
+  id           Int    @id() @default(autoincrement())
+  ss_order     String
+  pickup_point String
+  tujuan       String
+  user_id      Int
 
-  user          User       @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
