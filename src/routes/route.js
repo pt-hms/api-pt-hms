@@ -32,7 +32,6 @@ route.delete('/drivers', auth, driversController.deleteDriver);
 // sij
 route.post('/sij', auth, upload.single("bukti_tf"), sijController.createSij);
 route.get('/sij', auth, sijController.getAllSij);
-route.get('/sij/:id', auth, sijController.getSijById);
 route.put('/sij/:id', auth, upload.single("bukti_tf"), sijController.updateSij);
 route.delete('/sij/:id', auth, sijController.deleteSij);
 route.get('/sij-last', auth, sijController.getLastSij);

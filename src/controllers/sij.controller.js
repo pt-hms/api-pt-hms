@@ -10,6 +10,7 @@ export const createSij = async (req, res) => {
    }
 
    const noPolUpper = no_pol.toUpperCase();
+
    const driver = await prisma.user.findUnique({
       where: { no_pol: noPolUpper },
    });
@@ -26,10 +27,10 @@ export const createSij = async (req, res) => {
       return res.status(400).json({ message: "Bukti Transfer tidak ditemukan" });
    }
 
-   const createdAtUTC = dayjs.tz(tanggal_jam, "Asia/Jakarta").utc().toDate();
+   const createdAt = new Date(tanggal_jam);
 
-   const startOfDay = dayjs.tz("Asia/Jakarta").startOf("day").toDate();
-   const endOfDay = dayjs.tz("Asia/Jakarta").endOf("day").toDate();
+   const startOfDay = dayjs().tz("Asia/Jakarta").startOf("day").toDate();
+   const endOfDay = dayjs().tz("Asia/Jakarta").endOf("day").toDate();
 
    const lastSij = await prisma.sIJ.findFirst({
       where: {
@@ -54,7 +55,7 @@ export const createSij = async (req, res) => {
          no_sij: nextNumber,
          user_id: driver.id,
          tf_id: Number(tf_id),
-         createdAt: createdAtUTC,
+         createdAt,
       },
    });
 
@@ -106,29 +107,12 @@ export const getAllSij = async (req, res) => {
    return res.status(200).json({ drivers });
 };
 
-export const getSijById = async (req, res) => {
-   const { id } = req.params;
-
-   const sij = await prisma.sIJ.findUnique({
-      where: { id: Number(id) },
-      include: {
-         user: true,
-      },
-   });
-
-   if (!sij) {
-      return res.status(400).json({ message: "SIJ tidak ditemukan" });
-   }
-
-   return res.status(200).json({ sij });
-};
-
 export const updateSij = async (req, res) => {
    const { id } = req.params;
-   const bukti_tf = req.file;
-   const { no_pol } = req.body;
+   const { no_pol, tanggal_jam } = req.body;
+   const bukti_tf = req.file || req.body.bukti_tf;
 
-   if (!bukti_tf || !no_pol) {
+   if (!bukti_tf || !no_pol || !tanggal_jam) {
       return res.status(400).json({ message: "Semua field harus diisi" });
    }
 
@@ -137,43 +121,64 @@ export const updateSij = async (req, res) => {
    });
 
    if (!sij) {
-      return res.status(400).json({ message: "SIJ tidak ditemukan" });
+      return res.status(404).json({ message: "SIJ tidak ditemukan" });
    }
 
-   const bukti_tf_url = await upload(bukti_tf);
+   const noPolUpper = no_pol.toUpperCase();
+   const driver = await prisma.user.findUnique({
+      where: { no_pol: noPolUpper },
+   });
 
-   await prisma.sIJ.update({
+   if (!driver) {
+      return res.status(400).json({ message: "Driver tidak ditemukan" });
+   }
+
+   let buktiTfUrl = bukti_tf;
+   if (typeof bukti_tf !== "string") {
+      const uploadResult = await upload(bukti_tf);
+      buktiTfUrl = uploadResult.url;
+   }
+
+   const createdAt = new Date(tanggal_jam);
+
+   const updatedSij = await prisma.sIJ.update({
       where: { id: Number(id) },
       data: {
-         bukti_tf: bukti_tf_url.url,
-         user_id: sij.user_id,
+         bukti_tf: buktiTfUrl,
+         user_id: driver.id,
+         createdAt,
       },
    });
 
-   const updatedSij = await prisma.sIJ.findUnique({
-      where: { id: Number(id) },
+   return res.status(200).json({
+      message: "SIJ berhasil diupdate",
+      sij: updatedSij,
    });
-
-   return res.status(200).json({ message: "SIJ berhasil diupdate", sij: updatedSij });
 };
 
 export const deleteSij = async (req, res) => {
-   const { id } = req.params;
+   const { id } = req.body;
 
-   const sij = await prisma.sIJ.findUnique({
-      where: { id: Number(id) },
-   });
-
-   if (!sij) {
-      return res.status(400).json({ message: "SIJ tidak ditemukan" });
+   if (!id || !Array.isArray(id) || id.length === 0) {
+      return res.status(400).json({ message: "Daftar ID tidak valid" });
    }
 
-   await prisma.sIJ.delete({
-      where: { id: Number(id) },
+   const numericIds = id.map(Number);
+
+   const deleted = await prisma.sIJ.deleteMany({
+      where: { id: { in: numericIds } },
    });
 
-   return res.status(200).json({ message: "SIJ berhasil dihapus" });
+   if (deleted.count === 0) {
+      return res.status(404).json({ message: "Tidak ada SIJ yang dihapus" });
+   }
+
+   return res.status(200).json({
+      message: `SIJ dengan ID ${numericIds.join(", ")} berhasil dihapus`,
+      deletedCount: deleted.count,
+   });
 };
+
 
 export const getLastSij = async (req, res) => {
    const startOfDay = dayjs().tz("Asia/Jakarta").startOf("day").utc().toDate();
