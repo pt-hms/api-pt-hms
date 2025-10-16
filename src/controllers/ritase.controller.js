@@ -2,8 +2,6 @@ import prisma from "../../prisma/client.js";
 import { createWorker } from "tesseract.js";
 import { deleteImage, upload } from "../middleware/cloudinary.js";
 
-const worker = await createWorker("eng");
-
 export const createRitase = async (req, res) => {
    const ss_order = req.file;
    const { no_pol } = req.body;
@@ -158,6 +156,7 @@ export const uploadRitase = async (req, res) => {
    }
 
    const order = await upload(ss_order);
+   const worker = await createWorker("eng");
    const { data } = await worker.recognize(req.file.buffer);
 
    await worker.terminate();
