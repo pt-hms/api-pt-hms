@@ -328,3 +328,13 @@ export const uploadRitase = async (req, res) => {
       return res.status(500).json({ message: "Terjadi kesalahan server", error: error.message });
    }
 };
+
+export const getMyRitase = async (req, res) => {
+   const { id } = req.user;
+
+   const ritase = await prisma.ritase.findMany({
+      where: { user_id: Number(id) },
+   });
+
+   return res.status(200).json({ ritase });
+}

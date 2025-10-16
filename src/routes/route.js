@@ -45,5 +45,6 @@ route.get('/ritase/:id', auth, ritaseController.getRitaseById);
 route.put('/ritase/:id', auth, ritaseController.updateRitase);
 route.delete('/ritase/:id', auth, ritaseController.deleteRitase);
 route.post('/ritase-upload', auth, upload.single("ss_order"), ritaseController.uploadRitase);
+route.get('/ritase-saya', auth, ritaseController.getMyRitase);
 
 export default route;
