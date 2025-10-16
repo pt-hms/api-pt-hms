@@ -155,7 +155,6 @@ export const uploadRitase = async (req, res) => {
       return res.status(400).json({ message: "Semua field harus diisi" });
    }
 
-   const order = await upload(ss_order);
    const worker = await createWorker("eng");
    const { data } = await worker.recognize(req.file.buffer);
 
@@ -192,6 +191,8 @@ export const uploadRitase = async (req, res) => {
       await deleteImage(order.public_id);
       return res.status(400).json({ message: "Pick up point dan tujuan sudah ada" });
    }
+
+   const order = await upload(ss_order);
 
    const ritase = await prisma.ritase.create({
       data: {
