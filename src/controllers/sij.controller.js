@@ -61,16 +61,29 @@ export const createSij = async (req, res) => {
 };
 
 export const getAllSij = async (req, res) => {
+   const { tanggal } = req.query;
+
+   let sijFilter = {};
+
+   if (tanggal) {
+      const startOfDay = dayjs.tz(tanggal, "Asia/Jakarta").startOf("day").toDate();
+      const endOfDay = dayjs.tz(tanggal, "Asia/Jakarta").endOf("day").toDate();
+
+      sijFilter = {
+         createdAt: {
+            gte: startOfDay,
+            lte: endOfDay,
+         },
+      };
+   }
+
    const sij = await prisma.user.findMany({
       where: { role: "driver" },
-      orderBy: {
-         id: "desc",
-      },
+      orderBy: { id: "desc" },
       include: {
          sij: {
-            orderBy: {
-               id: "desc",
-            },
+            where: sijFilter,
+            orderBy: { id: "desc" },
          },
       },
    });
