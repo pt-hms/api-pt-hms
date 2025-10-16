@@ -1,6 +1,7 @@
 import prisma from "../../prisma/client.js";
 import { createWorker } from "tesseract.js";
 import { deleteImage, upload } from "../middleware/cloudinary.js";
+import { ocrSpace } from "ocr-space-api-wrapper";
 
 // if (!globalThis.ocrWorkerPromise) {
 //    globalThis.ocrWorkerPromise = (async () => {
@@ -188,95 +189,57 @@ export const uploadRitase = async (req, res) => {
       return res.status(400).json({ message: "File gambar tidak ditemukan." });
    }
 
-   let worker;
+   const order  = await upload(ss_order);
+   const ocr = await ocrSpace(order.url, { apiKey: process.env.OCR_KEY, language: "eng" });
+   const text = ocr.ParsedResults[0].ParsedText;
 
-   try {
-      // ✅ Konfigurasi kompatibel dengan environment serverless
-      worker = await createWorker({
-         workerPath: "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js",
-         corePath: "https://cdn.jsdelivr.net/npm/tesseract.js-core@5.0.2/tesseract-core-simd.wasm.js",
-         langPath: "https://tessdata.projectnaptha.com/4.0.0",
-      });
+   const pickupOptions = ["1A", "1B", "1C", "2D", "2E", "2F", "3 Domestik", "3 Internasional"];
+   let pickup = pickupOptions.find((opt) => text.toLowerCase().includes(opt.toLowerCase()));
 
-      // ✅ Urutan load yang benar (wajib diikuti agar tidak trigger langsArr.map bug)
-      await worker.load();
-      await worker.loadLanguage("eng");
-      await worker.initialize("eng");
-
-      // Jalankan OCR + upload paralel
-      const [ocrResult, uploadResult] = await Promise.all([
-         worker.recognize(req.file.buffer),
-         upload(ss_order),
-      ]);
-
-      const text = ocrResult.data.text;
-
-      // Ekstraksi pickup point
-      const pickupOptions = ["1A", "1B", "1C", "2D", "2E", "2F", "3 Domestik", "3 Internasional"];
-      let pickup = pickupOptions.find((opt) =>
-         text.toLowerCase().includes(opt.toLowerCase())
-      );
-
-      if (pickup && !pickup.toLowerCase().startsWith("terminal")) {
-         pickup = `Terminal ${pickup}`;
-      }
-      if (!pickup) pickup = "Pick up point Tidak ditemukan";
-
-      // Ekstraksi tujuan
-      const tujuanMatch = text.match(/Menurunkan([\s\S]*?)Penumpang/i);
-      let tujuan = tujuanMatch
-         ? tujuanMatch[1].replace(/\n+/g, " ").trim()
-         : "Tujuan Tidak ditemukan";
-
-      if (pickup.includes("Tidak ditemukan") || tujuan.includes("Tidak ditemukan")) {
-         return res.status(400).json({
-            message: "Pick up point atau tujuan tidak dapat diekstraksi dari gambar.",
-            pickup,
-            tujuan,
-         });
-      }
-
-      // Cek duplikat
-      const duplicate = await prisma.ritase.findFirst({
-         where: {
-            user_id: req.user.id,
-            pickup_point: pickup,
-            tujuan: tujuan,
-         },
-      });
-
-      if (duplicate) {
-         return res.status(409).json({
-            message: "Data ritase dengan pick up point dan tujuan ini sudah ada.",
-            pickup,
-            tujuan,
-         });
-      }
-
-      // Simpan ke database
-      const ritase = await prisma.ritase.create({
-         data: {
-            ss_order: uploadResult.url,
-            pickup_point: pickup,
-            tujuan,
-            user_id: req.user.id,
-         },
-      });
-
-      return res.status(201).json({
-         message: "Ritase berhasil dibuat",
-         data: ritase,
-      });
-   } catch (error) {
-      console.error("❌ Error uploadRitase:", error);
-      return res.status(500).json({
-         message: "Terjadi kesalahan server saat memproses gambar.",
-         error: error.message,
-      });
-   } finally {
-      if (worker) {
-         await worker.terminate();
-         console.log("✅ Tesseract worker terminated.");
-      }
+   if (pickup && !pickup.toLowerCase().startsWith("terminal")) {
+      pickup = `Terminal ${pickup}`;
    }
+   if (!pickup) pickup = "Pick up point Tidak ditemukan";
+
+   const tujuanMatch = text.match(/Menurunkan([\s\S]*?)Penumpang/i);
+   let tujuan = tujuanMatch ? tujuanMatch[1].replace(/\n+/g, " ").trim() : "Tujuan Tidak ditemukan";
+
+   if (pickup.includes("Tidak ditemukan") || tujuan.includes("Tidak ditemukan")) {
+      return res.status(400).json({
+         message: "Pick up point atau tujuan tidak dapat diekstraksi dari gambar.",
+         pickup,
+         tujuan,
+      });
+   }
+
+   const duplicate = await prisma.ritase.findFirst({
+      where: {
+         user_id: req.user.id,
+         pickup_point: pickup,
+         tujuan: tujuan,
+      },
+   });
+
+   if (duplicate) {
+      await deleteImage(order.public_id);
+      return res.status(409).json({
+         message: "Data ritase dengan pick up point dan tujuan ini sudah ada.",
+         pickup,
+         tujuan,
+      });
+   }
+
+   const ritase = await prisma.ritase.create({
+      data: {
+         ss_order: order.url,
+         pickup_point: pickup,
+         tujuan,
+         user_id: req.user.id,
+      },
+   });
+
+   return res.status(201).json({
+      message: "Ritase berhasil dibuat",
+      data: ritase,
+   });
 };
