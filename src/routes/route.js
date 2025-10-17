@@ -40,7 +40,6 @@ route.post('/sij-print', auth, upload.single("bukti_tf"), sijController.printSij
 // ritase
 route.post('/ritase', auth, upload.single("ss_order"), ritaseController.createRitase);
 route.get('/ritase', auth, ritaseController.getAllRitase);
-route.get('/ritase/:id', auth, ritaseController.getRitaseById);
 route.put('/ritase/:id', auth, ritaseController.updateRitase);
 route.delete('/ritase/:id', auth, ritaseController.deleteRitase);
 route.post('/ritase-upload', auth, upload.single("ss_order"), ritaseController.uploadRitase);

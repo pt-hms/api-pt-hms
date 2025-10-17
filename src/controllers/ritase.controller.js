@@ -89,22 +89,11 @@ export const getAllRitase = async (req, res) => {
    return res.status(200).json({ ritase });
 };
 
-export const getRitaseById = async (req, res) => {
-   const { id } = req.params;
-
-   const ritase = await prisma.ritase.findUnique({
-      where: { id: Number(id) },
-      include: { user: true },
-   });
-
-   return res.status(200).json({ ritase });
-};
-
 export const updateRitase = async (req, res) => {
    const { id } = req.params;
-   const { no_pol, pickup_point, tujuan } = req.body;
+   const { no_pol, pickup_point, tujuan, tanggal_jam } = req.body;
 
-   if (!no_pol || !pickup_point || !tujuan) {
+   if (!no_pol || !pickup_point || !tujuan || !tanggal_jam) {
       return res.status(400).json({ message: "Semua field harus diisi" });
    }
 
@@ -125,12 +114,15 @@ export const updateRitase = async (req, res) => {
       return res.status(400).json({ message: "Driver tidak ditemukan" });
    }
 
+   const createdAt = new Date(tanggal_jam);
+
    await prisma.ritase.update({
       where: { id: Number(id) },
       data: {
          pickup_point,
          tujuan,
          user_id: driver.id,
+         createdAt
       },
    });
 
@@ -141,22 +133,44 @@ export const updateRitase = async (req, res) => {
    return res.status(200).json({ message: "Ritase berhasil diperbarui", ritase: updatedRitase });
 };
 
+// export const deleteRitase = async (req, res) => {
+//    const { id } = req.params;
+
+//    const ritase = await prisma.ritase.findUnique({
+//       where: { id: Number(id) },
+//    });
+
+//    if (!ritase) {
+//       return res.status(400).json({ message: "Ritase tidak ditemukan" });
+//    }
+
+//    await prisma.ritase.delete({
+//       where: { id: Number(id) },
+//    });
+
+//    return res.status(200).json({ message: "Ritase berhasil dihapus" });
+// };
+
 export const deleteRitase = async (req, res) => {
-   const { id } = req.params;
+   const { id } = req.body;
 
-   const ritase = await prisma.ritase.findUnique({
-      where: { id: Number(id) },
-   });
-
-   if (!ritase) {
-      return res.status(400).json({ message: "Ritase tidak ditemukan" });
+   if (!id || !Array.isArray(id) || id.length === 0) {
+      return res.status(400).json({ message: "Daftar ID tidak valid" });
    }
 
-   await prisma.ritase.delete({
-      where: { id: Number(id) },
+   const numericIds = id.map(Number);
+
+   const deleted = await prisma.user.deleteMany({
+      where: { id: { in: numericIds } },
    });
 
-   return res.status(200).json({ message: "Ritase berhasil dihapus" });
+   if (deleted.count === 0) {
+      return res.status(404).json({ message: "Tidak ada ritase yang dihapus" });
+   }
+
+   return res.status(200).json({
+      message: `Ritase dengan ID ${id} berhasil dihapus`,
+   });
 };
 
 export const getMyRitase = async (req, res) => {
