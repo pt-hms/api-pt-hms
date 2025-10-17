@@ -44,19 +44,29 @@ export const createDriver = async (req, res) => {
 };
 
 export const getAllDrivers = async (req, res) => {
-   const { kategori } = req.query;
+   const {search} = req.query;
+
+   const where = {
+      role: "driver",
+      ...(search && {
+         OR: [
+            { nama: { contains: search, mode: "insensitive" } },
+            { no_pol: { contains: search, mode: "insensitive" } },
+            { kategori: { contains: search, mode: "insensitive" } },
+            { mobil: { contains: search, mode: "insensitive" } },
+            { no_kep: { contains: search, mode: "insensitive" } },
+            { no_hp: { contains: search, mode: "insensitive" } },
+            { no_darurat: { contains: search, mode: "insensitive" } },
+         ],
+      }),
+   };
 
    const drivers = await prisma.user.findMany({
-      where: { role: "driver" },
+      where,
       orderBy: {
          id: "desc",
       },
    });
-
-   if (kategori) {
-      const filteredDrivers = drivers.filter((driver) => driver.kategori === kategori);
-      return res.status(200).json({ drivers: filteredDrivers });
-   }
 
    return res.status(200).json({ drivers });
 };
