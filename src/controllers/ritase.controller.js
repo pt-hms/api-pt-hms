@@ -160,7 +160,7 @@ export const deleteRitase = async (req, res) => {
 
    const numericIds = id.map(Number);
 
-   const deleted = await prisma.user.deleteMany({
+   const deleted = await prisma.ritase.deleteMany({
       where: { id: { in: numericIds } },
    });
 

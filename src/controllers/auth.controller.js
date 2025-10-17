@@ -6,7 +6,7 @@ export const register = async (req, res) => {
    const foto_profil = req.file;
    const { nama, no_pol, kategori, mobil, no_kep, exp_kep, no_hp, no_darurat, password } = req.body;
 
-   if (!foto_profil || !nama || !no_pol || !kategori || !mobil || !no_kep || !exp_kep || !no_hp || !no_darurat || !password) {
+   if (!foto_profil || !nama || !no_pol || !kategori || !mobil || !no_hp || !no_darurat || !password) {
       return res.status(400).json({ message: "Semua field harus diisi" });
    }
 
