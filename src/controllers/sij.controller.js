@@ -65,7 +65,7 @@ export const createSij = async (req, res) => {
 };
 
 export const getAllSij = async (req, res) => {
-   const { tanggal, search } = req.query;
+   const { tanggal } = req.query;
 
    const selectedDate = tanggal || dayjs().tz("Asia/Jakarta").format("YYYY-MM-DD");
 
