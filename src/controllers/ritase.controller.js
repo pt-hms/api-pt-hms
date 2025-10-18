@@ -15,78 +15,98 @@ export const createRitase = async (req, res) => {
    const ss_order = req.file;
    const { no_pol, tanggal_jam } = req.body;
 
-   if (!ss_order || !no_pol || !tanggal_jam) {
-      return res.status(400).json({ message: `Kolom ${!ss_order ? "Screenshot Order" : !no_pol ? "Plat Nomor" : "Tanggal & Jam"} harus diisi` });
+   if (!ss_order) {
+      return res.status(400).json({ message: "Screenshot Order harus diupload" });
    }
 
-   const order = await upload(ss_order);
-
-   const ocr = await ocrSpace(order.url, { apiKey: process.env.OCR_KEY, language: "eng" });
-   const text = ocr.ParsedResults?.[0]?.ParsedText || "";
-
-   const pickupOptions = ["1A", "1B", "1C", "2D", "2E", "2F", "3 Domestik", "3 Internasional"];
-   let pickup = pickupOptions.find((opt) => text.toLowerCase().includes(opt.toLowerCase()));
-
-   if (pickup && !pickup.toLowerCase().startsWith("terminal")) {
-      pickup = `Terminal ${pickup}`;
-   }
-   if (!pickup) pickup = "Pickup point Tidak ditemukan";
-
-   const tujuanMatch = text.match(/Menurunkan([\s\S]*?)Penumpang/i);
-   let tujuan = tujuanMatch ? tujuanMatch[1].replace(/\n+/g, " ").trim() : "Tujuan Tidak ditemukan";
-
-   if (pickup.includes("Tidak ditemukan") || tujuan.includes("Tidak ditemukan")) {
-      await deleteImage(order.public_id);
-      return res.status(400).json({
-         message: "Pickup point atau Tujuan tidak ada di gambar.",
-         pickup,
-         tujuan,
-      });
+   if (!no_pol || !tanggal_jam) {
+      return res.status(400).json({ message: `Kolom ${!no_pol ? "Plat Nomor" : "Tanggal & Jam"} harus diisi` });
    }
 
    const noPolUpper = no_pol.toUpperCase();
+
    const driver = await prisma.user.findUnique({
       where: { no_pol: noPolUpper },
    });
 
    if (!driver) {
-      await deleteImage(order.public_id);
-      return res.status(400).json({ message: "Driver tidak ditemukan." });
+      return res.status(400).json({ message: "Driver tidak ditemukan" });
    }
 
-   const duplicate = await prisma.ritase.findFirst({
-      where: {
-         user_id: driver.id,
-         pickup_point: pickup,
-         tujuan: tujuan,
-      },
-   });
+   try {
+      const order = await upload(ss_order);
+      const ocr = await ocrSpace(order.url, {
+         apiKey: process.env.OCR_API_KEY,
+         language: "eng",
+      });
+      const text = ocr.ParsedResults?.[0]?.ParsedText || "";
 
-   if (duplicate) {
-      await deleteImage(order.public_id);
-      return res.status(409).json({
-         message: "Data ritase dengan pick up point dan tujuan ini sudah ada.",
-         pickup,
-         tujuan,
+      const argoMatch = text.match(/Rp\s?([\d.,]+)/i);
+      const argo = argoMatch ? argoMatch[1].replace(/[^\d.,]/g, "").trim() : "Tidak ditemukan";
+
+      let pickup = "Pickup point tidak ditemukan";
+      const pickupRegex = text.match(/(?:Pick Up|Menjemput|Terminal\s1B\s-\sGrabCar\sBandara\sInternasional\sSoekarno\sHatta)[\s\S]*?(?=(?:Passenger|Penumpang|2\.|Drop Off|Menurunkan|Rute\syang\sdiambil))/i);
+      if (pickupRegex) {
+         pickup = pickupRegex[0]
+            .replace(/(Pick Up|Menjemput)/i, "")
+            .replace(/\b(Passenger|Penumpang|Chat|Free Call|Obrolan|Batal|Cancel|Rute yang diambil|Panggilan Gratis)\b/gi, "")
+            .replace(/\s+/g, " ")
+            .trim();
+      }
+
+      let dropoff = "Tujuan Tidak ditemukan";
+      const dropoffRegex = text.match(/(?:Drop Off|Menurunkan|Dekat\sBlok\sB\sNo\.\s*296\sKavling\sDPR)[\s\S]*?(?=(?:Passenger|Penumpang|$))/i);
+      if (dropoffRegex) {
+         dropoff = dropoffRegex[0]
+            .replace(/(Drop Off|Menurunkan)/i, "")
+            .replace(/\b(Passenger|Penumpang|Chat|Free Call|Obrolan|Batal|Cancel|Panggilan Gratis)\b/gi, "")
+            .replace(/\s+/g, " ")
+            .trim();
+      }
+
+      pickup = cleanOCR(pickup);
+      dropoff = cleanOCR(dropoff);
+
+      if (pickup === "Pickup point tidak ditemukan") {
+         const altPickupRegex = text.match(/(Terminal\s\d[A-Z]?\s-\sGrabCar\sBandara\sInternasional\sSoekarno\sHatta|No\s\d+,\sJl\.\s[A-Za-z\s\d,]+)/i);
+         if (altPickupRegex) {
+            pickup = cleanOCR(altPickupRegex[0]);
+         }
+      }
+
+      if (dropoff === "Tujuan Tidak ditemukan") {
+         const altDropoffRegex = text.match(
+            /(?:OYO\sTownhouse\s\d+\sHotel\s[A-Za-z\s\d,]+|Terminal\s\d[A-Z]?\sDeparture\sSoekarno-Hatta\sAirport|(Ruko\sMelia\sWalk[\s\S]*?)(?=Rp[\d.,]+|\b(Chat|Panggilan Gratis|Isi Ulang|Lainnya|Sudah sampai)\b))/i
+         );
+         if (altDropoffRegex) {
+            dropoff = cleanOCR(altDropoffRegex[1] || altDropoffRegex[0]);
+         }
+      }
+
+      const createdAt = new Date(tanggal_jam);
+
+      const ritase = await prisma.ritase.create({
+         data: {
+            ss_order: order.url,
+            argo,
+            pickup_point: pickup,
+            tujuan: dropoff,
+            user_id: driver.id,
+            createdAt
+         },
+      });
+
+      return res.status(201).json({
+         message: "Berhasil mengupload ritase",
+         ritase,
+      });
+   } catch (err) {
+      console.error(err);
+      return res.status(500).json({
+         message: "Terjadi kesalahan saat memproses OCR",
+         error: err.message,
       });
    }
-
-   const createdAt = new Date(tanggal_jam);
-
-   const ritase = await prisma.ritase.create({
-      data: {
-         ss_order: order.url,
-         pickup_point: pickup,
-         tujuan,
-         user_id: driver.id,
-         createdAt,
-      },
-   });
-
-   return res.status(201).json({
-      message: "Ritase berhasil dibuat",
-      data: ritase,
-   });
 };
 
 export const getAllRitase = async (req, res) => {

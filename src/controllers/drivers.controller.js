@@ -80,7 +80,7 @@ export const updateDriver = async (req, res) => {
    const file = req.file;
    const { foto_profil, nama, no_pol, kategori, mobil, no_kep, exp_kep, no_hp, no_darurat, password } = req.body;
 
-   if (!nama || !no_pol || !kategori || !mobil || !no_kep || !exp_kep || !no_hp || !no_darurat || !password) {
+   if (!nama || !no_pol || !kategori || !mobil || !no_hp || !no_darurat || !password) {
       return res.status(400).json({ message: `Kolom ${!no_pol ? "Plat Nomor" : !kategori ? "Kategori" : !mobil ? "Mobil" : !no_hp ? "No Telepon" : !no_darurat ? "No Darurat" : "Password"} harus diisi` });
    }
 
