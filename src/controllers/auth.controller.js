@@ -70,7 +70,9 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: "Password salah" });
    }
 
-   const token = createToken(driver);
+   const { password: _, ...driverWithoutPassword } = driver;
 
-   return res.status(200).json({ message: "Login berhasil", token, driver });
+   const token = createToken(driverWithoutPassword);
+
+   return res.status(200).json({ message: "Login berhasil", token, driver: driverWithoutPassword });
 };
