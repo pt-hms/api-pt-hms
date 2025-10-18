@@ -23,7 +23,7 @@ const main = async () => {
       data: {
          foto_profil: "https://cdn-icons-png.freepik.com/512/9703/9703596.png",
          nama: "ADMIN",
-         no_pol: "B 0000 ADM",
+         no_pol: "B 1 HMS",
          kategori: "Admin",
          mobil: "-",
          no_kep: "-",

@@ -7,7 +7,7 @@ export const register = async (req, res) => {
    const { nama, no_pol, kategori, mobil, no_kep, exp_kep, no_hp, no_darurat, password } = req.body;
 
    if (!foto_profil || !nama || !no_pol || !kategori || !mobil || !no_hp || !no_darurat || !password) {
-      return res.status(400).json({ message: "Semua field harus diisi" });
+      return res.status(400).json({ message: `Kolom ${!foto_profil ? "Foto Profil" : !no_pol ? "Plat Nomor" : !kategori ? "Kategori" : !mobil ? "Mobil" : !no_hp ? "No Telepon" : !no_darurat ? "No Darurat" : "Password"} harus diisi` });
    }
 
    const noPolUpper = no_pol.toUpperCase();
@@ -20,7 +20,11 @@ export const register = async (req, res) => {
    }
 
    const profil_url = await upload(foto_profil);
-   const exp_kep_iso = new Date(exp_kep).toISOString();
+
+   let exp_kep_iso;
+   if (exp_kep) {
+      exp_kep_iso = new Date(exp_kep).toISOString();
+   }
 
    const driver = await prisma.user.create({
       data: {
@@ -48,7 +52,7 @@ export const login = async (req, res) => {
    const { no_pol, password } = req.body;
 
    if (!no_pol || !password) {
-      return res.status(400).json({ message: "Semua field harus diisi" });
+      return res.status(400).json({ message: `Kolom ${!no_pol ? "Plat Nomor" : "Password"} harus diisi` });
    }
 
    const noPolUpper = no_pol.toUpperCase();

@@ -1,12 +1,11 @@
 import dayjs from "dayjs";
 import prisma from "../../prisma/client.js";
-import { upload } from "../middleware/cloudinary.js";
 
 export const createSij = async (req, res) => {
    const { tf_id, no_pol, tanggal_jam } = req.body;
 
    if (!tf_id || !no_pol || !tanggal_jam) {
-      return res.status(400).json({ message: "Semua field harus diisi" });
+      return res.status(400).json({ message: `Kolom ${!tf_id ? "Bukti Transfer" : !no_pol ? "Plat Nomor" : "Tanggal & Jam"} harus diisi` });
    }
 
    const noPolUpper = no_pol.toUpperCase();
@@ -66,14 +65,13 @@ export const createSij = async (req, res) => {
 };
 
 export const getAllSij = async (req, res) => {
-   const { tanggal } = req.query;
+   const { tanggal, search } = req.query;
 
    const selectedDate = tanggal || dayjs().tz("Asia/Jakarta").format("YYYY-MM-DD");
 
    const startOfDay = dayjs.tz(selectedDate, "Asia/Jakarta").startOf("day").toDate();
    const endOfDay = dayjs.tz(selectedDate, "Asia/Jakarta").endOf("day").toDate();
 
-   // Filter untuk tabel sij
    const sijFilter = {
       createdAt: {
          gte: startOfDay,
@@ -81,7 +79,6 @@ export const getAllSij = async (req, res) => {
       },
    };
 
-   // Filter untuk tabel tf
    const tfFilter = {
       createdAt: {
          gte: startOfDay,
@@ -111,12 +108,10 @@ export const updateSij = async (req, res) => {
    const { id } = req.params;
    const { tf_id, no_pol, tanggal_jam } = req.body;
 
-   // Validasi input
    if (!tf_id || !no_pol || !tanggal_jam) {
-      return res.status(400).json({ message: "Semua field harus diisi" });
+      return res.status(400).json({ message: `Kolom ${!tf_id ? "Bukti Transfer" : !no_pol ? "Plat Nomor" : "Tanggal & Jam"} harus diisi` });
    }
 
-   // Pastikan SIJ ada
    const existingSij = await prisma.sIJ.findUnique({
       where: { id: Number(id) },
    });
@@ -125,7 +120,6 @@ export const updateSij = async (req, res) => {
       return res.status(404).json({ message: "SIJ tidak ditemukan" });
    }
 
-   // Cek driver berdasarkan nomor polisi
    const noPolUpper = no_pol.toUpperCase();
    const driver = await prisma.user.findUnique({
       where: { no_pol: noPolUpper },
@@ -135,7 +129,6 @@ export const updateSij = async (req, res) => {
       return res.status(400).json({ message: "Driver tidak ditemukan" });
    }
 
-   // Cek bukti transfer
    const tf = await prisma.tF.findUnique({
       where: { id: Number(tf_id) },
    });
@@ -144,10 +137,8 @@ export const updateSij = async (req, res) => {
       return res.status(400).json({ message: "Bukti Transfer tidak ditemukan" });
    }
 
-   // Konversi tanggal ke UTC
    const createdAt = new Date(tanggal_jam);
 
-   // Update SIJ
    const updatedSij = await prisma.sIJ.update({
       where: { id: Number(id) },
       data: {
@@ -213,7 +204,7 @@ export const printSij = async (req, res) => {
    const { tf_id } = req.body;
 
    if (!tf_id) {
-      return res.status(400).json({ message: "Semua field harus diisi" });
+      return res.status(400).json({ message: "Bukti Transfer harus diisi" });
    }
 
    const driver = await prisma.user.findUnique({
@@ -232,7 +223,6 @@ export const printSij = async (req, res) => {
       return res.status(400).json({ message: "Bukti Transfer tidak ditemukan" });
    }
 
-   // ✅ Gunakan timezone Asia/Jakarta
    const startOfDay = dayjs().tz("Asia/Jakarta").startOf("day").toDate();
    const endOfDay = dayjs().tz("Asia/Jakarta").endOf("day").toDate();
 

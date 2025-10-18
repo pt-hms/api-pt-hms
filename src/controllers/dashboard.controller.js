@@ -26,48 +26,47 @@ export const getDashboard = async (req, res) => {
    });
 
    const report = [];
-   let cumulativeRides = 0;
-   let cumulativeDrivers = 0;
    const seenDrivers = new Set();
 
-   const earlyRides = ritaseData.filter((r) => {
-      const hour = dayjs(r.createdAt).tz("Asia/Jakarta").hour();
-      return hour >= 0 && hour < 7;
-   }).length;
-   cumulativeRides += earlyRides;
+   let cumulativeRides = 0;
+   let cumulativeDrivers = 0;
 
-   const earlyTf = tfData.filter((t) => {
-      const hour = dayjs(t.createdAt).tz("Asia/Jakarta").hour();
-      return hour >= 0 && hour < 7;
-   });
-   earlyTf.forEach((t) => seenDrivers.add(t.user_id));
-   cumulativeDrivers = seenDrivers.size;
-
-   report.push({
-      jam: "00–06",
-      rides: cumulativeRides,
-      dailyActiveDriver: cumulativeDrivers,
-   });
+   const inRange = (createdAt, start, end) => {
+      const t = dayjs(createdAt).tz("Asia/Jakarta");
+      return (t.isAfter(start) || t.isSame(start)) && (t.isBefore(end) || t.isSame(end));
+   };
 
    for (let hour = 7; hour <= 23; hour++) {
-      const currentHourTime = dayjs.tz(`${selectedDate} ${String(hour).padStart(2, "0")}:00`, "Asia/Jakarta");
+      let windowStart, windowEnd;
+      if (hour === 7) {
+         windowStart = dayjs.tz(`${selectedDate} 00:00:00`, "Asia/Jakarta");
+         windowEnd = dayjs.tz(`${selectedDate} 06:59:59`, "Asia/Jakarta");
+      } else {
+         const prevHour = hour - 1;
+         windowStart = dayjs.tz(`${selectedDate} ${String(prevHour).padStart(2, "0")}:00:00`, "Asia/Jakarta");
+         windowEnd = dayjs.tz(`${selectedDate} ${String(hour - 1).padStart(2, "0")}:59:59`, "Asia/Jakarta");
+      }
 
-      if (currentHourTime.isBefore(nowJakarta)) {
-         const ridesThisHour = ritaseData.filter((r) => dayjs(r.createdAt).tz("Asia/Jakarta").hour() === hour).length;
-         cumulativeRides += ridesThisHour;
+      const label = hour === 23 ? "23:59" : `${String(hour).padStart(2, "0")}:00`;
 
-         const tfThisHour = tfData.filter((t) => dayjs(t.createdAt).tz("Asia/Jakarta").hour() === hour);
-         tfThisHour.forEach((t) => seenDrivers.add(t.user_id));
+      const windowPassed = !windowEnd.isAfter(nowJakarta);
+
+      if (windowPassed) {
+         const ridesUntilNow = ritaseData.filter((r) => inRange(r.createdAt, dayjs.tz(`${selectedDate} 00:00:00`, "Asia/Jakarta"), windowEnd)).length;
+         cumulativeRides = ridesUntilNow;
+
+         const tfUntilNow = tfData.filter((t) => inRange(t.createdAt, dayjs.tz(`${selectedDate} 00:00:00`, "Asia/Jakarta"), windowEnd));
+         tfUntilNow.forEach((t) => seenDrivers.add(t.user_id));
          cumulativeDrivers = seenDrivers.size;
 
          report.push({
-            jam: `${String(hour).padStart(2, "0")}:00`,
+            jam: label,
             rides: cumulativeRides,
             dailyActiveDriver: cumulativeDrivers,
          });
       } else {
          report.push({
-            jam: `${String(hour).padStart(2, "0")}:00`,
+            jam: label,
             rides: 0,
             dailyActiveDriver: 0,
          });

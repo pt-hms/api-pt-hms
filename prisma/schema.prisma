@@ -14,14 +14,14 @@ datasource db {
 }
 
 model User {
-  id          Int      @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   foto_profil String
   nama        String
-  no_pol      String   @unique
+  no_pol      String    @unique
   kategori    String
   mobil       String
-  no_kep      String
-  exp_kep     DateTime @db.Date
+  no_kep      String?
+  exp_kep     DateTime? @db.Date
   no_hp       String
   no_darurat  String
   password    String
@@ -64,6 +64,7 @@ model TF {
 model Ritase {
   id           Int    @id() @default(autoincrement())
   ss_order     String
+  argo         String
   pickup_point String
   tujuan       String
   user_id      Int

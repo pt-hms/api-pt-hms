@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "User" ALTER COLUMN "no_kep" DROP NOT NULL,
+ALTER COLUMN "exp_kep" DROP NOT NULL;

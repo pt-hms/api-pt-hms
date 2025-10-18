@@ -6,7 +6,7 @@ export const uploadTf = async (req, res) => {
    const bukti_tf = req.file;
 
    if (!bukti_tf) {
-      return res.status(400).json({ message: "Semua field harus diisi" });
+      return res.status(400).json({ message: "Bukti transfer harus diupload" });
    }
 
    const bukti_tf_url = await upload(bukti_tf);
