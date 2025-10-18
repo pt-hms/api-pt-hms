@@ -87,7 +87,7 @@ export const getDashboard = async (req, res) => {
    });
 };
 
-export const exportExcel = async (req, res) => {
+export const exportRitase = async (req, res) => {
    try {
       const { date, start, end } = req.query;
 
@@ -107,6 +107,7 @@ export const exportExcel = async (req, res) => {
       }
 
       const users = await prisma.user.findMany({
+         where: { role: "driver" },
          include: {
             ritase: {
                where: {
@@ -211,5 +212,55 @@ export const exportExcel = async (req, res) => {
    } catch (error) {
       console.error(error);
       res.status(500).json({ message: "Gagal mengekspor Excel" });
+   }
+};
+
+export const exportDriver = async (req, res) => {
+   try {
+      const drivers = await prisma.user.findMany({
+         where: { role: "driver" },
+      });
+
+      if (!drivers.length) {
+         return res.status(404).json({ message: "Tidak ada data driver ditemukan" });
+      }
+
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet("Data Driver");
+
+      const sample = drivers[0];
+      const columns = Object.keys(sample).map((key) => ({
+         header: key.toUpperCase(),
+         key,
+         width: 20,
+      }));
+
+      worksheet.columns = columns;
+
+      drivers.forEach((driver) => {
+         worksheet.addRow(driver);
+      });
+
+      worksheet.getRow(1).eachCell((cell) => {
+         cell.font = { bold: true };
+         cell.alignment = { horizontal: "center" };
+         cell.border = {
+            top: { style: "thin" },
+            bottom: { style: "thin" },
+            left: { style: "thin" },
+            right: { style: "thin" },
+         };
+      });
+
+      const fileName = `data_driver_pt_hms_${new Date().toISOString().split("T")[0]}.xlsx`;
+
+      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+      res.setHeader("Content-Disposition", `attachment; filename=${fileName}`);
+
+      await workbook.xlsx.write(res);
+      res.end();
+   } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Gagal mengekspor data driver" });
    }
 };

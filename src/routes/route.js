@@ -22,7 +22,8 @@ route.put('/profile', auth, upload.single("foto_profil"), profileController.upda
 
 // dashboard
 route.get('/dashboard', auth, dashboardController.getDashboard);
-route.get('/export-excel', dashboardController.exportExcel);
+route.get('/export-ritase', dashboardController.exportRitase);
+route.get('/export-driver', dashboardController.exportDriver);
 
 // drivers
 route.post('/drivers', auth, upload.single("foto_profil"), driversController.createDriver);
