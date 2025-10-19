@@ -120,7 +120,7 @@ export const getAllRitase = async (req, res) => {
 
 export const updateRitase = async (req, res) => {
    const { id } = req.params;
-   const { no_pol, pickup_point, tujuan, tanggal_jam } = req.body;
+   const { no_pol, argo, pickup_point, tujuan, tanggal_jam } = req.body;
 
    if (!no_pol || !pickup_point || !tujuan || !tanggal_jam) {
       return res.status(400).json({ message: `Kolom ${!no_pol ? "Plat Nomor" : !pickup_point ? "Pickup Point" : !tujuan ? "Tujuan" : "Tanggal & Jam"} harus diisi` });
@@ -148,6 +148,7 @@ export const updateRitase = async (req, res) => {
    await prisma.ritase.update({
       where: { id: Number(id) },
       data: {
+         argo,
          pickup_point,
          tujuan,
          user_id: driver.id,
