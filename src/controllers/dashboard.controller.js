@@ -127,6 +127,7 @@ export const exportRitase = async (req, res) => {
          { header: "No", key: "no", width: 5 },
          { header: "Nama", key: "nama", width: 25 },
          { header: "Plat Nomor", key: "no_pol", width: 15 },
+         { header: "Kategori", key: "kategori", width: 15 },
          ...dateRange.map((d) => ({
             header: d.toISOString().split("T")[0],
             key: d.toISOString().split("T")[0],
@@ -145,6 +146,7 @@ export const exportRitase = async (req, res) => {
             no,
             nama: user.nama,
             no_pol: user.no_pol,
+            kategori: user.kategori,
          };
 
          dateRange.forEach((tanggal, idx) => {
