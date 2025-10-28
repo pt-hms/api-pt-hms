@@ -48,7 +48,7 @@ export const getDashboard = async (req, res) => {
          windowEnd = dayjs.tz(`${selectedDate} ${String(hour - 1).padStart(2, "0")}:59:59`, "Asia/Jakarta");
       }
 
-      const label = hour === 23 ? "23:59" : `${String(hour).padStart(2, "0")}:00`;
+      const label = `${String(hour).padStart(2, "0")}:00`;
 
       const windowPassed = !windowEnd.isAfter(nowJakarta);
 
