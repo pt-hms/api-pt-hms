@@ -37,7 +37,7 @@ export const getDashboard = async (req, res) => {
       return (t.isAfter(start) || t.isSame(start)) && (t.isBefore(end) || t.isSame(end));
    };
 
-   for (let hour = 7; hour <= 23; hour++) {
+   for (let hour = 7; hour <= 24; hour++) {
       let windowStart, windowEnd;
       if (hour === 7) {
          windowStart = dayjs.tz(`${selectedDate} 00:00:00`, "Asia/Jakarta");
@@ -48,7 +48,7 @@ export const getDashboard = async (req, res) => {
          windowEnd = dayjs.tz(`${selectedDate} ${String(hour - 1).padStart(2, "0")}:59:59`, "Asia/Jakarta");
       }
 
-      const label = `${String(hour).padStart(2, "0")}:00`;
+      const label = hour === 24 ? "23:59" : `${String(hour).padStart(2, "0")}:00`;
 
       const windowPassed = !windowEnd.isAfter(nowJakarta);
 
