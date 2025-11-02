@@ -193,10 +193,14 @@ export const getMyRitase = async (req, res) => {
       orderBy: { createdAt: "desc" },
    });
 
+   const offset = 7 * 60 * 60 * 1000;
    const grouped = ritase.reduce((acc, item) => {
-      const date = item.createdAt.toISOString().split("T")[0];
-      if (!acc[date]) acc[date] = [];
-      acc[date].push(item);
+      const localDate = new Date(item.createdAt.getTime() + offset)
+         .toISOString()
+         .split("T")[0];
+
+      if (!acc[localDate]) acc[localDate] = [];
+      acc[localDate].push(item);
       return acc;
    }, {});
 
